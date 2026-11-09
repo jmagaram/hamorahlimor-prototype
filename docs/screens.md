@@ -109,6 +109,7 @@ Validation is inline. Footer: `Cancel` · `Assign`.
   - an audio comment (Record / Play / Re-record / Remove)
 - **Overall**: a comment text area and an audio comment.
 - Footer: `Cancel` · `Save draft` · `Publish`. Both save buttons return to Assignment detail.
+- When the feedback is already published, the footer is `Cancel` · `Publish` only: published feedback can't go back to draft.
 
 ## Drawers (summary)
 Add class · class students/delete · add student · student name · class picker · security code · new-exercise kind · title · time limit · re-recording · due date · confirmations (publish, delete, unassign) · "can't publish yet".

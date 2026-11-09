@@ -11,12 +11,22 @@ Two users: **teacher** and **student**. This phase builds a **click-through prot
 - Mobile-first: max width around 520px, centered on desktop.
 - Audio is faked. "Record" and "Play" buttons only toggle state; no microphone or real playback.
 - `prototype/teacher.html` is the first version, a single HTML file. Use it as a behavior reference: same pages, same flows, same sample data.
-- Keep the types in `src/model/types.ts` matching `docs/data-model.md` exactly, so they carry over to Firestore later.
+- Keep the types in `src/model/types.ts` matching the **entities** in `docs/data-model.md` exactly (field names included), so they carry over to Firestore later. They follow the entity model, not the planned Firestore layout (no copied names, no subcollections).
+- `teacher.html` uses older, shorter field names (`code`, `due`, `q.text`, ...). The data model's names win.
 
 ## Docs
 
 - `docs/data-model.md`: entities, fields, relationships, rules, and the planned Firestore layout. **This is the source of truth.** If a UI change needs a model change, update this doc in the same change.
 - `docs/screens.md`: every teacher page, what it shows, its footer buttons, and its drawers.
+
+## Code layout
+
+- `src/model/`: `types.ts` (the entities), `seed.ts` (sample data), `store.ts` (in-memory store and all mutations), `derived.ts` (display status and other computed values).
+- `src/nav/`: the navigation stack.
+- `src/ui/`: the page frame (header, footer), drawers (`useDrawer` in `drawerContext.ts`), rows/fields, select mode (`useSelection`), fake audio widget.
+- `src/pages/`: one component per screen in `docs/screens.md`.
+
+Commands: `npm run dev`, `npm run build` (type-checks), `npm run lint`.
 
 ## Naming (important)
 
@@ -47,6 +57,7 @@ Navigation:
 - Links go in every direction: student → assignment → exercise → another student, and so on.
 - If you navigate to a page that is already in the trail (same page and same params), cut the stack back to it instead of pushing a duplicate.
 - No browser alerts or confirms. Use a drawer.
+- Navigation is in memory only: the browser's back button and reload are not wired to it.
 
 ## Later phases (not now)
 
