@@ -42,7 +42,7 @@ function newSecurityCode(d: Db): string {
 export function addClass(name: string): string | undefined {
   name = name.trim();
   if (!name) return 'Enter a name.';
-  if (db.classes.some(c => c.name === name)) return 'That class already exists.';
+  if (db.classes.some(c => c.name.toLowerCase() === name.toLowerCase())) return 'There is another class with the same name.';
   mutate(d => { d.classes.push({ name }); });
 }
 
@@ -52,9 +52,14 @@ export function deleteClass(name: string) {
 
 /* ---------- students ---------- */
 
+const DUPLICATE_STUDENT = 'There is another student with the same name.';
+const nameTaken = (name: string, exceptId?: string) =>
+  db.students.some(s => s.id !== exceptId && s.name.toLowerCase() === name.toLowerCase());
+
 export function addStudent(name: string, className: string): string | undefined {
   name = name.trim();
   if (!name) return 'Enter a name.';
+  if (nameTaken(name)) return DUPLICATE_STUDENT;
   mutate(d => {
     d.students.push({ id: newId('s'), name, className, securityCode: newSecurityCode(d), dateCreated: today() });
   });
@@ -63,6 +68,7 @@ export function addStudent(name: string, className: string): string | undefined 
 export function renameStudent(id: string, name: string): string | undefined {
   name = name.trim();
   if (!name) return 'Enter a name.';
+  if (nameTaken(name, id)) return DUPLICATE_STUDENT;
   mutate(d => { d.students.find(s => s.id === id)!.name = name; });
 }
 

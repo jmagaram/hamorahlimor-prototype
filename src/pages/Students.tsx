@@ -54,11 +54,12 @@ export function Students() {
   );
 }
 
-function AddStudentDrawer() {
+/** With `className`, the class is fixed (opened from Class detail) and not shown as a choice. */
+export function AddStudentDrawer({ className: fixedClass }: { className?: string } = {}) {
   const db = useDb();
   const { close } = useDrawer();
   const [name, setName] = useState('');
-  const [className, setClassName] = useState(db.classes[0]?.name ?? '');
+  const [className, setClassName] = useState(fixedClass ?? db.classes[0]?.name ?? '');
   const [error, setError] = useState('');
   const done = () => {
     if (!className) return setError('Add a class first.');
@@ -67,14 +68,15 @@ function AddStudentDrawer() {
   };
   return (
     <DrawerShell title="Add student" error={error}
-      actions={<><button onClick={close}>Cancel</button><button onClick={done}>Done</button></>}>
+      actions={<><button onClick={close}>Cancel</button><button onClick={done}>OK</button></>}>
       <p><label>Name<br /><input className="wide" type="text" autoFocus value={name} onChange={e => setName(e.target.value)} /></label></p>
-      <p><label>Class<br />
-        <select value={className} onChange={e => setClassName(e.target.value)}>
-          {db.classes.map(c => <option key={c.name}>{c.name}</option>)}
-        </select>
-      </label></p>
-      <p><small>A security code is created automatically.</small></p>
+      {fixedClass
+        ? <p>Class: {fixedClass}</p>
+        : <p><label>Class<br />
+            <select value={className} onChange={e => setClassName(e.target.value)}>
+              {db.classes.map(c => <option key={c.name}>{c.name}</option>)}
+            </select>
+          </label></p>}
     </DrawerShell>
   );
 }

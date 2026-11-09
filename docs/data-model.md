@@ -75,12 +75,13 @@ Types: `date` is a calendar day (`YYYY-MM-DD`). `timestamp` is a point in time (
 ## Entities
 
 ### Class
-- `name`: unique. It is the key; other records refer to a class by its name.
+- `name`: required, and unique (ignoring case and surrounding spaces). It is the key; other records refer to a class by its name.
 - Managed on its own Classes page.
 - Not renamable for now (renaming would have to update every student). It can be deleted only when it has no students.
 
 ### Student
 - `id`, `name`, `className`, `securityCode`, `dateCreated`
+- `name`: required, and unique across all students (ignoring case and surrounding spaces).
 - `securityCode`: a short code, generated automatically, that the student signs in with. The teacher can show it or generate a new one. Codes are unique across all students; a generated code that collides is regenerated.
 
 ### Exercise

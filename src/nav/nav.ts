@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 export type Route =
   | { page: 'home' }
   | { page: 'classes' }
+  | { page: 'class'; name: string }
   | { page: 'students' }
   | { page: 'student'; id: string }
   | { page: 'exercises' }

@@ -45,8 +45,8 @@ export function DrawerShell({ title, error, actions, children }: {
 }
 
 /** A single input. onDone returns an error message to keep the drawer open. */
-export function InputDrawer({ title, initial, type = 'text', onDone }: {
-  title: string; initial: string; type?: 'text' | 'date'; onDone: (value: string) => string | void;
+export function InputDrawer({ title, initial, type = 'text', doneLabel = 'Done', onDone }: {
+  title: string; initial: string; type?: 'text' | 'date'; doneLabel?: string; onDone: (value: string) => string | void;
 }) {
   const { close } = useDrawer();
   const [value, setValue] = useState(initial);
@@ -58,7 +58,7 @@ export function InputDrawer({ title, initial, type = 'text', onDone }: {
   };
   return (
     <DrawerShell title={title} error={error}
-      actions={<><button onClick={close}>Cancel</button><button onClick={done}>Done</button></>}>
+      actions={<><button onClick={close}>Cancel</button><button onClick={done}>{doneLabel}</button></>}>
       <input className="wide" type={type} value={value} autoFocus
         onChange={e => setValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') done(); }} />
     </DrawerShell>
