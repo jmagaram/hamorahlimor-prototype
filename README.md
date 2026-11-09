@@ -7,6 +7,8 @@ npm install
 npm run dev
 ```
 
+To see it at phone size, open `/phone.html` (e.g. http://localhost:5173/phone.html): the app inside a 360×750 frame.
+
 - `CLAUDE.md`: project overview, naming, UI model, code layout.
 - `docs/data-model.md`: entities and rules (source of truth).
 - `docs/screens.md`: every teacher page.
