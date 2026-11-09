@@ -11,5 +11,4 @@ To see it at phone size, open `/phone.html` (e.g. http://localhost:5173/phone.ht
 
 - `CLAUDE.md`: project overview, naming, UI model, code layout.
 - `docs/data-model.md`: entities and rules (source of truth).
-- `docs/screens.md`: every teacher page.
 - `prototype/teacher.html`: the original single-file prototype, kept as a behavior reference.

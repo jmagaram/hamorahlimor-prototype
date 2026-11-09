@@ -1,4 +1,4 @@
-import type { Answer, Assignment, Comment, Db, Exercise, ExerciseKind, Feedback } from './types';
+import type { Answer, Assignment, Comment, Db, Exercise, ExerciseKind, Feedback, Student } from './types';
 
 export const KINDS: Record<ExerciseKind, { label: string; description: string }> = {
   video: { label: 'Video', description: 'Students watch a video clip, then answer out loud.' },
@@ -75,3 +75,34 @@ export function materialSummary(e: Exercise): string {
 /** Assignment ids in the order grouped lists show them, for "Select all". */
 export const groupedOrder = (db: Db, assignments: Assignment[]): string[] =>
   DISPLAY_STATUSES.flatMap(st => assignments.filter(a => displayStatus(db, a) === st).map(a => a.id));
+
+/* ---------- classes (free text on Student, no entity) ---------- */
+
+const byName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
+
+/** Every class in use, A–Z. */
+export const classNames = (db: Db): string[] =>
+  [...new Set(db.students.flatMap(s => (s.className ? [s.className] : [])))].sort(byName);
+
+/** Trim; blank means no class; reuse an existing class's spelling when it matches ignoring case. */
+export function normalizeClass(db: Db, raw: string | undefined): string | undefined {
+  const t = raw?.trim();
+  if (!t) return undefined;
+  return classNames(db).find(c => c.toLowerCase() === t.toLowerCase()) ?? t;
+}
+
+export interface StudentGroup {
+  /** Undefined for the "No class" group. */
+  className?: string;
+  label: string;
+  students: Student[];
+}
+
+/** Students grouped by class A–Z, then "No class"; names A–Z within each group. Empty groups are left out. */
+export function studentGroups(db: Db): StudentGroup[] {
+  const sorted = [...db.students].sort((a, b) => byName(a.name, b.name));
+  const groups: StudentGroup[] = classNames(db).map(c => ({ className: c, label: c, students: sorted.filter(s => s.className === c) }));
+  const none = sorted.filter(s => !s.className);
+  if (none.length) groups.push({ label: 'No class', students: none });
+  return groups;
+}

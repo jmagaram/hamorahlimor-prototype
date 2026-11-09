@@ -5,7 +5,6 @@ export function seed(): Db {
   // a2 is mid-session: its current session began two minutes before the page loaded.
   const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
   return {
-    classes: [{ name: 'Aleph' }, { name: 'Bet' }],
     students: [
       { id: 's1', name: 'Noa Levi', className: 'Aleph', securityCode: 'K7P2', dateCreated: '2026-09-01' },
       { id: 's2', name: 'Itai Cohen', className: 'Aleph', securityCode: 'M3Q9', dateCreated: '2026-09-01' },

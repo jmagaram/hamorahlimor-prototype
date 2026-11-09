@@ -4,20 +4,16 @@
 
 ```mermaid
 erDiagram
-  SCHOOL_CLASS ||--o{ STUDENT : contains
   STUDENT ||--o{ ASSIGNMENT : receives
   EXERCISE ||--o{ ASSIGNMENT : "assigned as"
   EXERCISE ||--o{ QUESTION : has
   ASSIGNMENT ||--o{ ANSWER : has
   QUESTION ||--o{ ANSWER : "answered by"
   ASSIGNMENT ||--o| FEEDBACK : has
-  SCHOOL_CLASS {
-    string name PK
-  }
   STUDENT {
     string id PK
     string name
-    string className FK
+    string className "optional free text"
     string securityCode
     date dateCreated
   }
@@ -66,21 +62,15 @@ erDiagram
   }
 ```
 
-(The entity is called `SCHOOL_CLASS` in Mermaid only because `CLASS` is a reserved word there.)
-
 Questions are embedded in their exercise (see Question below), so they have no `exerciseId` or `order` field: the parent is the exercise and the order is the array order. An exercise can have zero questions while it is a draft; it needs at least one to publish.
 
 Types: `date` is a calendar day (`YYYY-MM-DD`). `timestamp` is a point in time (ISO 8601 in the prototype, a Firestore Timestamp later). The timer needs real timestamps.
 
 ## Entities
 
-### Class
-- `name`: required, and unique (ignoring case and surrounding spaces). It is the key; other records refer to a class by its name.
-- Managed on its own Classes page.
-- Not renamable for now (renaming would have to update every student). It can be deleted only when it has no students.
-
 ### Student
-- `id`, `name`, `className`, `securityCode`, `dateCreated`
+- `id`, `name`, `className?`, `securityCode`, `dateCreated`
+- `className`: optional free text that groups students (e.g. "Aleph"). There is no Class entity: the classes are the distinct values in use, and a class exists only while some student has it. When set, the value is trimmed, blank means no class, and a value that matches an existing class ignoring case takes that class's spelling. Renaming a class means changing it on each of its students.
 - `name`: required, and unique across all students (ignoring case and surrounding spaces).
 - `securityCode`: a short code, generated automatically, that the student signs in with. The teacher can show it or generate a new one. Codes are unique across all students; a generated code that collides is regenerated.
 
@@ -152,7 +142,6 @@ Lists of assignments are grouped in this order: Needs review, Feedback draft, In
 ## Planned Firestore layout (real app, not the prototype)
 
 ```
-classes/{name}
 students/{studentId}                     name, className, securityCode, dateCreated
 exercises/{exerciseId}                   ...fields, material, questions[] embedded
 assignments/{assignmentId}               studentId, exerciseId, dueDate, state, timer fields

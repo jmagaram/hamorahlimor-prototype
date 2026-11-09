@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { isOpen } from '../model/derived';
-import { addStudent, deleteStudents, regenerateSecurityCode, renameStudent, setStudentsClass, useDb } from '../model/store';
+import { classNames, isOpen, studentGroups } from '../model/derived';
+import { addStudent, deleteStudents, getDb, regenerateSecurityCode, renameStudent, setStudentsClass, useDb } from '../model/store';
 import { go } from '../nav/nav';
-import { ConfirmDrawer, DrawerShell, InputDrawer, PickDrawer } from '../ui/Drawer';
+import { ClassPickDrawer, ClassRadios } from '../ui/ClassPicker';
+import { initialClassChoice, resolveClassChoice } from '../ui/classChoice';
+import { ConfirmDrawer, DrawerShell, InputDrawer } from '../ui/Drawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer } from '../ui/Footer';
 import { GroupedAssignments } from '../ui/GroupedAssignments';
@@ -15,29 +17,26 @@ export function Students() {
   const db = useDb();
   const drawer = useDrawer();
   const sel = useSelection();
-  const ids = db.classes.flatMap(c => db.students.filter(s => s.className === c.name).map(s => s.id));
-  const classOptions = db.classes.map(c => ({ label: c.name, value: c.name }));
+  const groups = studentGroups(db);
+  const ids = groups.flatMap(g => g.students.map(s => s.id));
   return (
     <>
       <SelectAllBar sel={sel} ids={ids} />
-      {db.classes.map(c => {
-        const students = db.students.filter(s => s.className === c.name);
-        return (
-          <section key={c.name}>
-            <h3>{c.name}</h3>
-            {students.length ? students.map(s => {
-              const open = db.assignments.filter(a => a.studentId === s.id && isOpen(a)).length;
-              return <SelectableRow key={s.id} sel={sel} id={s.id} label={s.name}
-                sub={open ? `${open} open assignments` : ''} onClick={() => go({ page: 'student', id: s.id })} />;
-            }) : <Empty>No students</Empty>}
-          </section>
-        );
-      })}
+      {groups.length ? groups.map(g => (
+        <section key={g.label}>
+          <h3>{g.label}</h3>
+          {g.students.map(s => {
+            const open = db.assignments.filter(a => a.studentId === s.id && isOpen(a)).length;
+            return <SelectableRow key={s.id} sel={sel} id={s.id} label={s.name}
+              sub={open ? `${open} open assignments` : ''} onClick={() => go({ page: 'student', id: s.id })} />;
+          })}
+        </section>
+      )) : <Empty>No students yet.</Empty>}
       <Footer buttons={sel.selecting ? [
         { label: 'Cancel', onClick: sel.cancel },
         {
           label: `Change class (${sel.count})`, disabled: !sel.count,
-          onClick: () => drawer.open(<PickDrawer title="Move to class" options={classOptions} showCurrent={false}
+          onClick: () => drawer.open(<ClassPickDrawer title="Move to class" showCurrent={false}
             onPick={v => { setStudentsClass(sel.selected, v); sel.cancel(); }} />),
         },
         {
@@ -54,29 +53,28 @@ export function Students() {
   );
 }
 
-/** With `className`, the class is fixed (opened from Class detail) and not shown as a choice. */
-export function AddStudentDrawer({ className: fixedClass }: { className?: string } = {}) {
-  const db = useDb();
+/** The class picked for the last student added, offered first for the next one. */
+let lastClass: string | undefined;
+
+function AddStudentDrawer() {
   const { close } = useDrawer();
   const [name, setName] = useState('');
-  const [className, setClassName] = useState(fixedClass ?? db.classes[0]?.name ?? '');
+  // The last class may have emptied out since; then start with "No class".
+  const [cls, setCls] = useState(() => initialClassChoice(classNames(getDb()).find(c => c === lastClass)));
   const [error, setError] = useState('');
   const done = () => {
-    if (!className) return setError('Add a class first.');
+    const { className, error: classError } = resolveClassChoice(cls);
+    if (classError) return setError(classError);
     const err = addStudent(name, className);
-    if (err) setError(err); else close();
+    if (err) return setError(err);
+    lastClass = getDb().students.at(-1)?.className;
+    close();
   };
   return (
     <DrawerShell title="Add student" error={error}
       actions={<><button onClick={close}>Cancel</button><button onClick={done}>OK</button></>}>
       <p><label>Name<br /><input className="wide" type="text" autoFocus value={name} onChange={e => setName(e.target.value)} /></label></p>
-      {fixedClass
-        ? <p>Class: {fixedClass}</p>
-        : <p><label>Class<br />
-            <select value={className} onChange={e => setClassName(e.target.value)}>
-              {db.classes.map(c => <option key={c.name}>{c.name}</option>)}
-            </select>
-          </label></p>}
+      <ClassRadios value={cls} onChange={setCls} />
     </DrawerShell>
   );
 }
@@ -91,9 +89,8 @@ export function Student({ id }: { id: string }) {
     <>
       <Field label="Name" value={s.name}
         onClick={() => drawer.open(<InputDrawer title="Name" initial={s.name} onDone={v => renameStudent(id, v)} />)} />
-      <Field label="Class" value={s.className}
-        onClick={() => drawer.open(<PickDrawer title="Class" options={db.classes.map(c => ({ label: c.name, value: c.name }))}
-          current={s.className} onPick={v => setStudentsClass([id], v)} />)} />
+      <Field label="Class" value={s.className ?? 'No class'}
+        onClick={() => drawer.open(<ClassPickDrawer current={s.className} onPick={v => setStudentsClass([id], v)} />)} />
       <Field label="Security code" value="••••  (tap to show)" onClick={() => drawer.open(<SecurityCodeDrawer id={id} />)} />
       <Field label="Created" value={s.dateCreated} />
       <h3>Assignments</h3>

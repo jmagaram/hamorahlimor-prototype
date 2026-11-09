@@ -7,8 +7,6 @@ const NOT_FOUND = 'Not found';
 export function routeTitle(db: Db, r: Route): string {
   switch (r.page) {
     case 'home': return 'Home';
-    case 'classes': return 'Classes';
-    case 'class': return db.classes.some(c => c.name === r.name) ? r.name : NOT_FOUND;
     case 'students': return 'Students';
     case 'student': return db.students.find(s => s.id === r.id)?.name ?? NOT_FOUND;
     case 'exercises': return 'Exercises';
@@ -32,5 +30,24 @@ export function routeTitle(db: Db, r: Route): string {
       return `${s?.name} · ${e?.title}`;
     }
     case 'review': return 'Review';
+  }
+}
+
+/** The page's own heading (an h2 at the top of the content). Defaults to its title. */
+export function routeHeading(db: Db, r: Route): string {
+  const title = routeTitle(db, r);
+  if (title === NOT_FOUND) return title;
+  switch (r.page) {
+    case 'home': return 'English practice';
+    case 'material': return 'Edit material';
+    case 'question': return r.questionId ? `Edit ${title.toLowerCase()}` : 'New question';
+    case 'assignToStudents': return `Assign ${db.exercises.find(e => e.id === r.exerciseId)?.title}`;
+    case 'assignToStudent': return `Assign to ${db.students.find(s => s.id === r.studentId)?.name}`;
+    case 'review': {
+      const a = db.assignments.find(x => x.id === r.id);
+      if (!a) return NOT_FOUND;
+      return `Feedback for ${db.students.find(s => s.id === a?.studentId)?.name}`;
+    }
+    default: return title;
   }
 }

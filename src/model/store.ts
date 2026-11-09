@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { normalizeClass } from './derived';
 import { now, today } from './format';
 import { seed } from './seed';
 import type { AudioRef, Comment, Db, Exercise, ExerciseKind, FeedbackStatus, Question } from './types';
@@ -37,31 +38,18 @@ function newSecurityCode(d: Db): string {
   }
 }
 
-/* ---------- classes ---------- */
-
-export function addClass(name: string): string | undefined {
-  name = name.trim();
-  if (!name) return 'Enter a name.';
-  if (db.classes.some(c => c.name.toLowerCase() === name.toLowerCase())) return 'There is another class with the same name.';
-  mutate(d => { d.classes.push({ name }); });
-}
-
-export function deleteClass(name: string) {
-  mutate(d => { d.classes = d.classes.filter(c => c.name !== name); });
-}
-
 /* ---------- students ---------- */
 
 const DUPLICATE_STUDENT = 'There is another student with the same name.';
 const nameTaken = (name: string, exceptId?: string) =>
   db.students.some(s => s.id !== exceptId && s.name.toLowerCase() === name.toLowerCase());
 
-export function addStudent(name: string, className: string): string | undefined {
+export function addStudent(name: string, className?: string): string | undefined {
   name = name.trim();
   if (!name) return 'Enter a name.';
   if (nameTaken(name)) return DUPLICATE_STUDENT;
   mutate(d => {
-    d.students.push({ id: newId('s'), name, className, securityCode: newSecurityCode(d), dateCreated: today() });
+    d.students.push({ id: newId('s'), name, className: normalizeClass(d, className), securityCode: newSecurityCode(d), dateCreated: today() });
   });
 }
 
@@ -72,9 +60,12 @@ export function renameStudent(id: string, name: string): string | undefined {
   mutate(d => { d.students.find(s => s.id === id)!.name = name; });
 }
 
-export function setStudentsClass(ids: Iterable<string>, className: string) {
+export function setStudentsClass(ids: Iterable<string>, className: string | undefined) {
   const set = new Set(ids);
-  mutate(d => { d.students.forEach(s => { if (set.has(s.id)) s.className = className; }); });
+  mutate(d => {
+    const c = normalizeClass(d, className);
+    d.students.forEach(s => { if (set.has(s.id)) s.className = c; });
+  });
 }
 
 export function regenerateSecurityCode(id: string) {

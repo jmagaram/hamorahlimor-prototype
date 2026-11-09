@@ -7,15 +7,11 @@ export type Timestamp = string;
 /** Path of an audio file. Cloud Storage later; a fake path in the prototype. */
 export type AudioRef = string;
 
-export interface SchoolClass {
-  /** Unique; the key other records use. */
-  name: string;
-}
-
 export interface Student {
   id: string;
   name: string;
-  className: string;
+  /** Free text for grouping students, e.g. "Aleph". Absent means no class. */
+  className?: string;
   securityCode: string;
   dateCreated: DateString;
 }
@@ -122,7 +118,6 @@ export interface Feedback {
 
 /** The whole in-memory database. */
 export interface Db {
-  classes: SchoolClass[];
   students: Student[];
   exercises: Exercise[];
   assignments: Assignment[];

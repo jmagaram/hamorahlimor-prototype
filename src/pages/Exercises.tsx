@@ -100,7 +100,7 @@ export function Exercise({ id }: { id: string }) {
         <h3>Assigned to</h3>
         <GroupedAssignments assignments={db.assignments.filter(a => a.exerciseId === id)}
           label={a => db.students.find(s => s.id === a.studentId)?.name}
-          sub={a => `${db.students.find(s => s.id === a.studentId)?.className} · due ${a.dueDate}`} />
+          sub={a => [db.students.find(s => s.id === a.studentId)?.className, `due ${a.dueDate}`].filter(Boolean).join(' · ')} />
       </>}
 
       <Footer buttons={draft ? [
