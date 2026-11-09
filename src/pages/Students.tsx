@@ -4,6 +4,7 @@ import { addStudent, deleteStudents, getDb, regenerateSecurityCode, renameStuden
 import { go } from '../nav/nav';
 import { ClassPickDrawer, ClassRadios } from '../ui/ClassPicker';
 import { initialClassChoice, resolveClassChoice } from '../ui/classChoice';
+import { dayLabel } from '../model/format';
 import { ConfirmDrawer, DrawerShell, InputDrawer } from '../ui/Drawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer } from '../ui/Footer';
@@ -95,7 +96,7 @@ export function Student({ id }: { id: string }) {
       <Field label="Created" value={s.dateCreated} />
       <h3>Assignments</h3>
       <GroupedAssignments assignments={db.assignments.filter(a => a.studentId === id)}
-        label={a => title(a.exerciseId)} sub={a => 'Due ' + a.dueDate} />
+        label={a => title(a.exerciseId)} sub={a => (a.dueDate ? `Due ${dayLabel(a.dueDate)}` : '')} />
       <Footer buttons={[{ label: 'Assign exercise', onClick: () => go({ page: 'assignToStudent', studentId: id }) }]} />
     </>
   );

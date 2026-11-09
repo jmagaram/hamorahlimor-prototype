@@ -30,7 +30,7 @@ erDiagram
   QUESTION {
     string id PK
     string promptText "optional"
-    file promptAudio "optional"
+    audio promptAudio "optional"
     int targetSeconds "optional goal"
   }
   ASSIGNMENT {
@@ -64,7 +64,7 @@ erDiagram
 
 Questions are embedded in their exercise (see Question below), so they have no `exerciseId` or `order` field: the parent is the exercise and the order is the array order. An exercise can have zero questions while it is a draft; it needs at least one to publish.
 
-Types: `date` is a calendar day (`YYYY-MM-DD`). `timestamp` is a point in time (ISO 8601 in the prototype, a Firestore Timestamp later). The timer needs real timestamps.
+Types: `date` is a calendar day (`YYYY-MM-DD`). `timestamp` is a point in time (ISO 8601 in the prototype, a Firestore Timestamp later). The timer needs real timestamps. `audio` is a teacher recording: `{ path, duration }`, the file path and its length in seconds (the length is shown as "0:02 / 2:42" and on settings rows). A student's Answer keeps its own `recording` and `duration` fields.
 
 ## Entities
 
@@ -84,7 +84,7 @@ The template. One structure for every kind: the material varies, and the questio
 |---|---|---|
 | `video` | Video | `url` (YouTube), `start?`, `end?`. Blank start means the beginning; blank end means the end. |
 | `read` | Read and respond | `text` |
-| `listen` | Listen and respond | `audio` (recorded by the teacher, always played whole), `sourceText?` |
+| `listen` | Listen and respond | `audio` (an `audio` recording by the teacher, always played whole), `sourceText?` |
 | `speaking` | Speaking questions | none |
 
 - A draft can have incomplete material: an empty `url` or `text`, or no `audio`. Publishing requires them.
@@ -95,14 +95,14 @@ The template. One structure for every kind: the material varies, and the questio
 **Lifecycle:** `draft` is fully editable. `published` is **locked**, and only published exercises can be assigned. To change a published exercise, **Duplicate** it, which creates a new draft. Locking guarantees that students' answers always match the questions they answered.
 
 ### Question
-- `id`, `promptText?`, `promptAudio?`, with at least one of the two prompt fields required
+- `id`, `promptText?`, `promptAudio?`. A draft question can have neither while the teacher fills it in; to publish, every question needs at least one.
 - `targetSeconds?`: a goal for the answer's length, not a cutoff. The student can record longer and sees that they went over.
 - Stored inside its Exercise, in order; safe to embed because a published exercise never changes.
 
 ### Assignment
 One exercise given to one student. It also holds the student's progress (there is no separate "work" or "submission" record, because there is exactly one response per assignment).
 
-- `id`, `studentId`, `exerciseId`, `dateAssigned`, `dueDate`
+- `id`, `studentId`, `exerciseId`, `dateAssigned`, `dueDate?` (absent means no due date)
 - `state`: `notStarted` → `active` ⇄ `paused` → `submitted`
 - Timer:
   - `dateStarted`: set once, when the student first taps Start.
@@ -119,7 +119,7 @@ One exercise given to one student. It also holds the student's progress (there i
 ### Feedback
 Zero or one per assignment; it exists once the teacher starts reviewing.
 
-- `Comment` = `{ text?, audio? }`, with at least one of the two to count as a comment.
+- `Comment` = `{ text?, audio? }` (`audio` is an `audio` recording), with at least one of the two to count as a comment.
 - `overall: Comment`
 - `answerComments: { [questionId]: Comment }`, keyed by the same questionId as the Answer.
 - `status`: `draft` | `published`. A single status for the whole thing: the student sees **nothing**, overall or per answer, until it is published. Once published it stays published: the teacher can edit and re-publish it (which updates `datePublished`), but cannot turn it back into a draft.

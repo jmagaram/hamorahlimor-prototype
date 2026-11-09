@@ -6,6 +6,12 @@ export type DateString = string;
 export type Timestamp = string;
 /** Path of an audio file. Cloud Storage later; a fake path in the prototype. */
 export type AudioRef = string;
+/** A recording the teacher made: the file and its length. */
+export interface AudioClip {
+  path: AudioRef;
+  /** Seconds. */
+  duration: number;
+}
 
 export interface Student {
   id: string;
@@ -33,7 +39,7 @@ export interface ReadMaterial {
 }
 export interface ListenMaterial {
   /** Recorded by the teacher, always played whole. Absent in a draft that hasn't recorded it. */
-  audio?: AudioRef;
+  audio?: AudioClip;
   sourceText?: string;
 }
 export type SpeakingMaterial = Record<string, never>;
@@ -47,9 +53,9 @@ export interface MaterialByKind {
 
 export interface Question {
   id: string;
-  /** At least one of promptText and promptAudio. */
+  /** At least one of promptText and promptAudio to publish; a draft question can have neither yet. */
   promptText?: string;
-  promptAudio?: AudioRef;
+  promptAudio?: AudioClip;
   /** A goal for the answer's length, not a cutoff. */
   targetSeconds?: number;
 }
@@ -76,7 +82,8 @@ export interface Assignment {
   studentId: string;
   exerciseId: string;
   dateAssigned: DateString;
-  dueDate: DateString;
+  /** Absent means no due date. */
+  dueDate?: DateString;
   state: AssignmentState;
   /** Set once, when the student first taps Start. */
   dateStarted?: Timestamp;
@@ -100,7 +107,7 @@ export interface Answer {
 /** Counts as a comment only with text, audio, or both. */
 export interface Comment {
   text?: string;
-  audio?: AudioRef;
+  audio?: AudioClip;
 }
 
 export type FeedbackStatus = 'draft' | 'published';

@@ -1,19 +1,25 @@
 import { useState } from 'react';
 import { KINDS, studentGroups } from '../model/derived';
-import { addDays, today } from '../model/format';
+import { dayLabel } from '../model/format';
 import { assign, useDb } from '../model/store';
 import { back } from '../nav/nav';
+import { DueDateDrawer } from '../ui/DueDateDrawer';
+import { useDrawer } from '../ui/drawerContext';
 import { Footer } from '../ui/Footer';
+import { Field } from '../ui/rows';
 import { NotFound } from './NotFound';
 
-function DueDate({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return <p><label>Due date <input type="date" value={value} onChange={e => onChange(e.target.value)} /></label></p>;
+/** The due date for the new assignments: a row that opens the due date menu. */
+function DueDate({ value, onChange }: { value: string | undefined; onChange: (v: string | undefined) => void }) {
+  const drawer = useDrawer();
+  return <Field label="Due date" value={value ? dayLabel(value) : 'No due date'}
+    onClick={() => drawer.open(<DueDateDrawer onPick={onChange} />)} />;
 }
 
 /** From an exercise: pick students. */
 export function AssignToStudents({ exerciseId }: { exerciseId: string }) {
   const db = useDb();
-  const [due, setDue] = useState(() => addDays(today(), 7));
+  const [due, setDue] = useState<string | undefined>();
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [error, setError] = useState('');
   const e = db.exercises.find(x => x.id === exerciseId);
@@ -27,7 +33,6 @@ export function AssignToStudents({ exerciseId }: { exerciseId: string }) {
   });
   const ok = () => {
     if (!picked.size) return setError('Choose at least one student.');
-    if (!due) return setError('Choose a due date.');
     assign(picked, e.id, due);
     back();
   };
@@ -65,7 +70,7 @@ export function AssignToStudents({ exerciseId }: { exerciseId: string }) {
 /** From a student: pick one published exercise. */
 export function AssignToStudent({ studentId }: { studentId: string }) {
   const db = useDb();
-  const [due, setDue] = useState(() => addDays(today(), 7));
+  const [due, setDue] = useState<string | undefined>();
   const [exerciseId, setExerciseId] = useState('');
   const [error, setError] = useState('');
   const s = db.students.find(x => x.id === studentId);
@@ -75,7 +80,6 @@ export function AssignToStudent({ studentId }: { studentId: string }) {
   const published = db.exercises.filter(e => e.status === 'published');
   const ok = () => {
     if (!exerciseId) return setError('Choose an exercise.');
-    if (!due) return setError('Choose a due date.');
     assign([s.id], exerciseId, due);
     back();
   };

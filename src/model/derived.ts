@@ -1,3 +1,4 @@
+import { mmss } from './format';
 import type { Answer, Assignment, Comment, Db, Exercise, ExerciseKind, Feedback, Student } from './types';
 
 export const KINDS: Record<ExerciseKind, { label: string; description: string }> = {
@@ -51,16 +52,16 @@ export function hasMaterial(e: Exercise): boolean {
 /** Why the exercise can't be published, or undefined if it can. */
 export function publishProblem(e: Exercise): string | undefined {
   if (!e.questions.length) return 'Add at least one question.';
+  const blank = e.questions.findIndex(q => !q.promptText && !q.promptAudio);
+  if (blank >= 0) return `Question ${blank + 1} needs prompt text or audio.`;
   if (hasMaterial(e)) return undefined;
   return { video: 'Add the video URL.', read: 'Add the text to read.', listen: 'Record the audio.', speaking: '' }[e.kind];
 }
 
 export function materialSummary(e: Exercise): string {
   switch (e.kind) {
-    case 'video': {
-      const m = e.material;
-      return m.url ? `${m.url} (${m.start || 'start'} – ${m.end || 'end'})` : 'Not set';
-    }
+    case 'video':
+      return e.material.url || 'Not set';
     case 'read': {
       const t = e.material.text;
       return t ? t.slice(0, 60) + (t.length > 60 ? '…' : '') : 'Not set';
@@ -105,4 +106,34 @@ export function studentGroups(db: Db): StudentGroup[] {
   const none = sorted.filter(s => !s.className);
   if (none.length) groups.push({ label: 'No class', students: none });
   return groups;
+}
+
+/** Seconds from "m:ss" or "h:mm:ss", or undefined if it doesn't parse. */
+function toSeconds(t: string): number | undefined {
+  if (!/^\d+(:\d{1,2}){1,2}$/.test(t)) return undefined;
+  return t.split(':').reduce((sum, part) => sum * 60 + Number(part), 0);
+}
+
+/** The clip's length when both ends are known ("5:12"); otherwise which part plays. */
+export function clipSummary(m: { start?: string; end?: string }): string {
+  if (m.start && m.end) {
+    const a = toSeconds(m.start), b = toSeconds(m.end);
+    if (a !== undefined && b !== undefined && b > a) return mmss(b - a);
+    return `${m.start} until ${m.end}`;
+  }
+  if (m.start) return `${m.start} until end`;
+  if (m.end) return `beginning until ${m.end}`;
+  return 'Whole video';
+}
+
+/** The value shown on a settings row for a recording: "Recorded · 0:22". */
+export const audioSummary = (clip: { duration: number } | undefined, none = 'Not recorded yet') =>
+  clip ? `Recorded · ${mmss(clip.duration)}` : none;
+
+/** Which part of the video plays, for a sentence: "1:05 – 3:20", "from 1:05 to the end", "the whole". */
+export function clipRange(m: { start?: string; end?: string }): string {
+  if (m.start && m.end) return `${m.start} – ${m.end}`;
+  if (m.start) return `from ${m.start} to the end`;
+  if (m.end) return `the beginning to ${m.end}`;
+  return 'all';
 }

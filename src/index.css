@@ -8,10 +8,29 @@ footer { position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin
 footer button, .bar button { flex: 1 1 auto; padding: 12px 10px; font-size: 16px; }
 .row { display: block; padding: 10px 4px; border-bottom: 1px solid #ddd; }
 .row[role=button] { cursor: pointer; }
+.menu .row:last-child { border-bottom: none; }
 .chev { float: right; color: #888; }
+a.standalone { text-decoration: none; }
 #bg { position: fixed; inset: 0; background: rgba(0, 0, 0, .4); z-index: 2; }
 #drawer { position: fixed; left: 0; right: 0; bottom: 0; max-width: 520px; margin: 0 auto; background: #fff; padding: 4px 16px 16px; border-radius: 12px 12px 0 0; max-height: 80vh; overflow: auto; box-sizing: border-box; z-index: 3; }
 .bar { display: flex; gap: 8px; margin-top: 12px; }
 .err { color: #b00; }
 textarea, input.wide { width: 100%; box-sizing: border-box; font-size: 16px; }
 input.wide { padding: 8px; }
+/* Audio drawer: the one place with color and a large font (see CLAUDE.md). */
+.recorder { text-align: center; padding: 8px 0; }
+.timer { font-size: 40px; font-variant-numeric: tabular-nums; margin: 8px 0; }
+.rec-btn { width: 72px; height: 72px; border-radius: 50%; border: 3px solid #ccc; background: #fff; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.rec-dot { width: 48px; height: 48px; border-radius: 50%; background: #d00; }
+.rec-square { width: 30px; height: 30px; border-radius: 4px; background: #d00; }
+.scrub { width: 100%; margin: 12px 0 4px; }
+.audio-time { text-align: center; margin: 0 0 12px; font-variant-numeric: tabular-nums; }
+.audio-row { display: flex; gap: 8px; justify-content: center; margin: 8px 0; }
+.audio-row button { flex: 1 1 auto; padding: 10px; font-size: 16px; }
+.audio-row.media button { font-size: 20px; }
+/* Read-only cards on a locked exercise. */
+.card { display: block; border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+.card[role=button], .thumb { cursor: pointer; }
+.thumb { aspect-ratio: 16 / 9; border: 1px solid #ddd; border-radius: 8px; background: #f2f2f2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; margin: 8px 0; }
+.thumb-play { font-size: 40px; }
+.offscreen { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
