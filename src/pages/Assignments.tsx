@@ -29,7 +29,7 @@ export function Assignments() {
       <SelectAllBar sel={sel} ids={groupedOrder(db, db.assignments)} />
       <GroupedAssignments assignments={db.assignments} sel={sel}
         label={a => `${student(a.studentId)?.name} · ${exercise(a.exerciseId)?.title}`}
-        sub={a => `${student(a.studentId)?.className} · due ${a.dueDate}`} />
+        sub={a => [student(a.studentId)?.className, `due ${a.dueDate}`].filter(Boolean).join(' · ')} />
       <Footer buttons={sel.selecting ? [
         { label: 'Cancel', onClick: sel.cancel },
         {
@@ -76,7 +76,7 @@ export function Assignment({ id }: { id: string }) {
 
   return (
     <>
-      <Field label="Student" value={`${s.name} (${s.className})`} onClick={() => go({ page: 'student', id: s.id })} />
+      <Field label="Student" value={s.className ? `${s.name} (${s.className})` : s.name} onClick={() => go({ page: 'student', id: s.id })} />
       <Field label="Exercise" value={e.title} onClick={() => go({ page: 'exercise', id: e.id })} />
       <Field label="Status" value={displayStatus(db, a)} />
       <Field label="Due" value={a.dueDate} onClick={() => drawer.open(dueDateDrawer(a.dueDate, v => setDueDate([id], v)))} />

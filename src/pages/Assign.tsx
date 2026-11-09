@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KINDS } from '../model/derived';
+import { KINDS, studentGroups } from '../model/derived';
 import { addDays, today } from '../model/format';
 import { assign, useDb } from '../model/store';
 import { back } from '../nav/nav';
@@ -37,14 +37,14 @@ export function AssignToStudents({ exerciseId }: { exerciseId: string }) {
       <p>Exercise: <b>{e.title}</b></p>
       <DueDate value={due} onChange={setDue} />
       <p>Choose students. Tick a class to select all of it.</p>
-      {db.classes.map(c => {
-        const students = db.students.filter(s => s.className === c.name);
+      {studentGroups(db).map(g => {
+        const students = g.students;
         const free = students.filter(s => !already.has(s.id)).map(s => s.id);
         const all = free.length > 0 && free.every(id => picked.has(id));
         return (
-          <section key={c.name}>
+          <section key={g.label}>
             <h3><label>
-              <input type="checkbox" disabled={!free.length} checked={all} onChange={ev => toggle(free, ev.target.checked)} /> {c.name}
+              <input type="checkbox" disabled={!free.length} checked={all} onChange={ev => toggle(free, ev.target.checked)} /> {g.label}
             </label></h3>
             {students.map(s => (
               <label key={s.id} className="row">

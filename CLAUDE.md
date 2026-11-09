@@ -17,14 +17,17 @@ Two users: **teacher** and **student**. This phase builds a **click-through prot
 ## Docs
 
 - `docs/data-model.md`: entities, fields, relationships, rules, and the planned Firestore layout. **This is the source of truth.** If a UI change needs a model change, update this doc in the same change.
-- `docs/screens.md`: every teacher page, what it shows, its footer buttons, and its drawers.
+
+- `docs/decisions.md`: important decisions and the reasoning behind them, so they can be revisited later. Add an entry when a choice was debated or isn't obvious from the code.
+
+Docs hold only guidelines that apply to the prototype as a whole, plus decision reasoning. Don't describe individual pages, buttons, or wording in docs: the code under `src/pages/` is the spec for each page, so change it directly.
 
 ## Code layout
 
 - `src/model/`: `types.ts` (the entities), `seed.ts` (sample data), `store.ts` (in-memory store and all mutations), `derived.ts` (display status and other computed values).
 - `src/nav/`: the navigation stack.
 - `src/ui/`: the page frame (header, footer), drawers (`useDrawer` in `drawerContext.ts`), rows/fields, select mode (`useSelection`), fake audio widget.
-- `src/pages/`: one component per screen in `docs/screens.md`.
+- `src/pages/`: one component per page.
 
 Commands: `npm run dev`, `npm run build` (type-checks), `npm run lint`.
 
@@ -34,13 +37,14 @@ Commands: `npm run dev`, `npm run build` (type-checks), `npm run lint`.
 - **Assignment**: one exercise given to one student, with a due date. It also holds the student's progress and timer.
 - **Answer**: one student recording for one question on one assignment.
 - **Feedback**: the teacher's comments on one assignment (overall + per answer), published as a whole.
-- **Class**: e.g. "Aleph", "Bet". Identified by its name, with no separate ID.
+- **Class**: e.g. "Aleph", "Bet". Optional free text on a student, used only to group students. Not an entity.
 
 ## UI model
 
 Every page has the same frame:
 
-- **Header** (sticky): Home and Back buttons on the left, then a breadcrumb of the navigation trail, e.g. `Home › Exercises › Climate change interview`. Every crumb except the last is clickable. Home and Back are disabled on Home.
+- **Header** (sticky): the trail *above* the current page. A line of small clickable crumbs for everything above the parent (e.g. `Home › Exercises ›`), then a Back button labeled with the parent (e.g. `‹ Climate change interview`). There is no separate Home button: the `Home` crumb (or `‹ Home`) goes home. No header on Home.
+- **Heading**: an `<h2>` at the top of the body says where you are and what you're doing. Each page chooses its own text: usually the page's title (`Aleph`), sometimes worded as a task (`Edit question 2`, `Assign Climate change interview`). The title (used in crumbs and Back) and the heading can differ; both live in `src/nav/titles.ts`.
 - **Body**: the page content.
 - **Footer** (fixed, optional): buttons within thumb reach. Each button is sized to its label, and leftover width is shared between them (`flex: 1 1 auto`). Disabled when the action can't apply.
 
@@ -53,8 +57,8 @@ Page types:
 
 Navigation:
 
-- Navigation is a **stack** that the breadcrumb renders.
-- Links go in every direction: student → assignment → exercise → another student, and so on.
+- Navigation is a **stack** that the header renders (crumbs, then Back for the parent).
+- Links go in every direction: student → assignment → exercise → another student, and so on. Every assignment row anywhere opens Assignment detail; every student name opens Student detail; every exercise title opens Exercise detail.
 - If you navigate to a page that is already in the trail (same page and same params), cut the stack back to it instead of pushing a duplicate.
 - No browser alerts or confirms. Use a drawer.
 - Navigation is in memory only: the browser's back button and reload are not wired to it.

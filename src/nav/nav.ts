@@ -2,8 +2,6 @@ import { useSyncExternalStore } from 'react';
 
 export type Route =
   | { page: 'home' }
-  | { page: 'classes' }
-  | { page: 'class'; name: string }
   | { page: 'students' }
   | { page: 'student'; id: string }
   | { page: 'exercises' }
@@ -52,9 +50,6 @@ export function go(route: Route) {
 }
 export function back() {
   if (stack.length > 1) set(stack.slice(0, -1));
-}
-export function home() {
-  set([entry({ page: 'home' })]);
 }
 export function crumb(i: number) {
   set(stack.slice(0, i + 1));

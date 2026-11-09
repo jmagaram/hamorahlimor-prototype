@@ -1,7 +1,8 @@
+import { useDb } from './model/store';
 import { useStack, type Route } from './nav/nav';
+import { routeHeading } from './nav/titles';
 import { AssignToStudent, AssignToStudents } from './pages/Assign';
 import { Assignment, Assignments } from './pages/Assignments';
-import { Class, Classes } from './pages/Classes';
 import { Material, QuestionEditor } from './pages/Editors';
 import { Exercise, Exercises } from './pages/Exercises';
 import { Home } from './pages/Home';
@@ -13,8 +14,6 @@ import { Header } from './ui/Header';
 function Page({ route }: { route: Route }) {
   switch (route.page) {
     case 'home': return <Home />;
-    case 'classes': return <Classes />;
-    case 'class': return <Class name={route.name} />;
     case 'students': return <Students />;
     case 'student': return <Student id={route.id} />;
     case 'exercises': return <Exercises />;
@@ -31,12 +30,16 @@ function Page({ route }: { route: Route }) {
 
 export default function App() {
   const stack = useStack();
+  const db = useDb();
   const top = stack[stack.length - 1];
   return (
     <DrawerProvider>
       <Header />
       {/* key: a different page (or the same page with other params) starts with fresh state */}
-      <main><Page key={top.key} route={top.route} /></main>
+      <main>
+        <h2>{routeHeading(db, top.route)}</h2>
+        <Page key={top.key} route={top.route} />
+      </main>
     </DrawerProvider>
   );
 }
