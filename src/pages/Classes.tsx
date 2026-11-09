@@ -1,9 +1,12 @@
+import { isOpen } from '../model/derived';
 import { addClass, deleteClass, useDb } from '../model/store';
-import { go } from '../nav/nav';
-import { DrawerShell, InputDrawer } from '../ui/Drawer';
+import { back, go } from '../nav/nav';
+import { InputDrawer } from '../ui/Drawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer } from '../ui/Footer';
 import { Empty, Row } from '../ui/rows';
+import { NotFound } from './NotFound';
+import { AddStudentDrawer } from './Students';
 
 export function Classes() {
   const db = useDb();
@@ -13,30 +16,35 @@ export function Classes() {
       {db.classes.length ? db.classes.map(c => (
         <Row key={c.name} label={c.name}
           sub={`${db.students.filter(s => s.className === c.name).length} students`}
-          onClick={() => drawer.open(<ClassDrawer name={c.name} />)} />
+          onClick={() => go({ page: 'class', name: c.name })} />
       )) : <Empty>No classes yet.</Empty>}
       <Footer buttons={[
-        { label: 'Add class', onClick: () => drawer.open(<InputDrawer title="Add class" initial="" onDone={addClass} />) },
+        { label: 'Add class', onClick: () => drawer.open(<InputDrawer title="Add class" initial="" doneLabel="OK" onDone={addClass} />) },
       ]} />
     </>
   );
 }
 
-function ClassDrawer({ name }: { name: string }) {
+export function Class({ name }: { name: string }) {
   const db = useDb();
-  const { close } = useDrawer();
-  const students = db.students.filter(s => s.className === name);
+  const drawer = useDrawer();
+  if (!db.classes.some(c => c.name === name)) return <NotFound />;
+  const students = db.students.filter(s => s.className === name).sort((a, b) => a.name.localeCompare(b.name));
   return (
-    <DrawerShell title={name}>
-      {students.length
-        ? <>
-            {students.map(s => <Row key={s.id} label={s.name} onClick={() => go({ page: 'student', id: s.id })} />)}
-            <p><small>Move students to another class before deleting this one.</small></p>
-          </>
-        : <>
-            <p>No students in this class.</p>
-            <p><button onClick={() => { deleteClass(name); close(); }}>Delete class</button></p>
-          </>}
-    </DrawerShell>
+    <>
+      <h3>Students</h3>
+      {students.length ? students.map(s => {
+        const open = db.assignments.filter(a => a.studentId === s.id && isOpen(a)).length;
+        return <Row key={s.id} label={s.name} sub={open ? `${open} open assignments` : ''}
+          onClick={() => go({ page: 'student', id: s.id })} />;
+      }) : <Empty>No students in this class.</Empty>}
+      <Footer buttons={[
+        { label: 'Add student', onClick: () => drawer.open(<AddStudentDrawer className={name} />) },
+        ...(students.length ? [] : [{
+          label: 'Delete class',
+          onClick: () => { deleteClass(name); back(); },
+        }]),
+      ]} />
+    </>
   );
 }

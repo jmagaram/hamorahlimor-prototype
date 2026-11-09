@@ -8,6 +8,7 @@ export function routeTitle(db: Db, r: Route): string {
   switch (r.page) {
     case 'home': return 'Home';
     case 'classes': return 'Classes';
+    case 'class': return db.classes.some(c => c.name === r.name) ? r.name : NOT_FOUND;
     case 'students': return 'Students';
     case 'student': return db.students.find(s => s.id === r.id)?.name ?? NOT_FOUND;
     case 'exercises': return 'Exercises';

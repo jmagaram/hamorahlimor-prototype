@@ -1,7 +1,7 @@
 import { useStack, type Route } from './nav/nav';
 import { AssignToStudent, AssignToStudents } from './pages/Assign';
 import { Assignment, Assignments } from './pages/Assignments';
-import { Classes } from './pages/Classes';
+import { Class, Classes } from './pages/Classes';
 import { Material, QuestionEditor } from './pages/Editors';
 import { Exercise, Exercises } from './pages/Exercises';
 import { Home } from './pages/Home';
@@ -14,6 +14,7 @@ function Page({ route }: { route: Route }) {
   switch (route.page) {
     case 'home': return <Home />;
     case 'classes': return <Classes />;
+    case 'class': return <Class name={route.name} />;
     case 'students': return <Students />;
     case 'student': return <Student id={route.id} />;
     case 'exercises': return <Exercises />;
