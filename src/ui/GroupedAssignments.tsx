@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
-import { DISPLAY_STATUSES, displayStatus } from '../model/derived';
+import { DISPLAY_STATUSES, displayStatus, isOverdue } from '../model/derived';
+import { today } from '../model/format';
 import { useDb } from '../model/store';
 import type { Assignment } from '../model/types';
-import { go } from '../nav/nav';
+import { linkTo } from '../nav/nav';
+import { Badge } from './Badge';
 import { Empty } from './rows';
 import { SelectableRow } from './selection';
 import type { Selection } from './useSelection';
@@ -17,6 +19,7 @@ export function GroupedAssignments({ assignments, label, sub, sel, nested }: {
   nested?: boolean;
 }) {
   const db = useDb();
+  const t = today();
   if (!assignments.length) return <Empty>No assignments.</Empty>;
   return (
     <>
@@ -27,8 +30,9 @@ export function GroupedAssignments({ assignments, label, sub, sel, nested }: {
           <section key={status}>
             {nested ? <h4>{status}</h4> : <h3>{status}</h3>}
             {xs.map(a => (
-              <SelectableRow key={a.id} sel={sel} id={a.id} label={label(a)} sub={sub(a)}
-                onClick={() => go({ page: 'assignment', id: a.id })} />
+              <SelectableRow key={a.id} sel={sel} id={a.id} sub={sub(a)}
+                label={isOverdue(a, t) ? <>{label(a)} <Badge color="red">Overdue</Badge></> : label(a)}
+                onClick={linkTo({ page: 'assignment', id: a.id })} />
             ))}
           </section>
         );

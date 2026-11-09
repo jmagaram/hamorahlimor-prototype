@@ -2,6 +2,16 @@
 
 Why things are the way they are. Newest first. Each entry: the decision, why, and what we gave up.
 
+## Exercise kinds stay fixed; material is one section named for the kind (2026-11-09)
+
+**Decision.** An exercise keeps one kind (video, listen, read, speaking), and its page has sections: General, then the material under a heading for the kind ("Video to watch", "Audio to listen to", "Text to read"; none for speaking), then Questions. The listen exercise's optional transcript (`sourceText`) was removed.
+
+**Considered, not taken.** One generic "Background material" section where a teacher adds any mix of video, audio and text ("Add material" → pick a kind, at most one of each). It would make `material` a set of optional parts and drop `kind`, and it raises questions with no answers yet: the order students meet the parts in, what publishing requires, how the timer and student page handle every combination.
+
+**Why.** The four kinds mirror the oral exam's task types, so one kind per exercise keeps it simple to make and to take. A heading named for the kind says what the material is and what the student does with it. The transcript was only for the teacher while reviewing and had no clear use yet.
+
+**Gave up.** An exercise can't combine, say, a video and a text. If that becomes useful, the generic section above is the way to go.
+
 ## One audio drawer for recording and playback (2026-11-09)
 
 **Decision.** Every recording is made and played in one drawer (`AudioDrawer`). It records with a red button and a large timer, then shows a player (slider, time, Back 15 / Play / Skip 15) with Record again and Delete. Changes save on Stop. A new take replaces the old one only when you stop it. Teacher recordings now store their length (`{ path, duration }`).

@@ -37,5 +37,16 @@ export function dayLabel(date: DateString): string {
   return `${WEEKDAYS[new Date(y, m - 1, d).getDay()]} ${d}-${MONTHS[m - 1]}`;
 }
 
-/** "due Tue 4-Nov", or "" with no due date (for lines under a row). */
-export const dueText = (dueDate: DateString | undefined) => (dueDate ? `due ${dayLabel(dueDate)}` : '');
+/** "Today, Mon 9-Nov", "Tomorrow, Tue 10-Nov", "Yesterday, Sun 8-Nov", otherwise "Wed 11-Nov". */
+export function friendlyDay(date: DateString): string {
+  const t = today();
+  const near = date === t ? 'Today' : date === addDays(t, 1) ? 'Tomorrow' : date === addDays(t, -1) ? 'Yesterday' : '';
+  return near ? `${near}, ${dayLabel(date)}` : dayLabel(date);
+}
+
+/** "due today, Mon 9-Nov", "due Wed 11-Nov", or "" with no due date (for lines under a row). */
+export const dueText = (dueDate: DateString | undefined) => {
+  if (!dueDate) return '';
+  const f = friendlyDay(dueDate);
+  return `due ${f[0].toLowerCase()}${f.slice(1)}`;
+};

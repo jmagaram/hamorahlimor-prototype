@@ -84,11 +84,10 @@ The template. One structure for every kind: the material varies, and the questio
 |---|---|---|
 | `video` | Video | `url` (YouTube), `start?`, `end?`. Blank start means the beginning; blank end means the end. |
 | `read` | Read and respond | `text` |
-| `listen` | Listen and respond | `audio` (an `audio` recording by the teacher, always played whole), `sourceText?` |
+| `listen` | Listen and respond | `audio` (an `audio` recording by the teacher, always played whole) |
 | `speaking` | Speaking questions | none |
 
 - A draft can have incomplete material: an empty `url` or `text`, or no `audio`. Publishing requires them.
-- `sourceText` on listen material: optional text of the recording. The teacher sees it while reviewing. Later it may be used to generate the audio with text-to-speech.
 - `timeLimit`: for the whole exercise. One value on the exercise, with no per-assignment override. To get a different limit, duplicate the exercise.
 - `allowRerecord`: if true, a student can re-record an answer before submitting, which overwrites it. If false, it's one take, like the real exam.
 

@@ -1,27 +1,24 @@
-import { useState, type ReactNode } from 'react';
-import { clipRange, clipSummary, KINDS, materialSummary, publishProblem } from '../model/derived';
+import { useState } from 'react';
+import { audioSummary, clipRange, clipSummary, KINDS, materialSummary, publishProblem } from '../model/derived';
 import { dueText, minutes, mmss } from '../model/format';
 import { addQuestion, createExercise, getDb, deleteExercise, duplicateExercises, publishExercise, updateDraft, useDb } from '../model/store';
 import type { Exercise as ExerciseT, ExerciseKind } from '../model/types';
 import { back, go } from '../nav/nav';
 import { ConfirmDrawer, DrawerShell, InputDrawer, MenuDrawer, PickDrawer } from '../ui/Drawer';
 import { AudioDrawer } from '../ui/audio';
+import { Badge } from '../ui/Badge';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer } from '../ui/Footer';
 import { GroupedAssignments } from '../ui/GroupedAssignments';
-import { ActionLink, Empty, Field, Row } from '../ui/rows';
-import { SelectAllBar, SelectableRow } from '../ui/selection';
-import { useSelection } from '../ui/useSelection';
+import { ActionLink, Empty, Facts, Field, Row } from '../ui/rows';
 import { NotFound } from './NotFound';
 
 export function Exercises() {
   const db = useDb();
   const drawer = useDrawer();
-  const sel = useSelection();
   const groups = (['draft', 'published'] as const).map(status => ({
     status, label: status === 'draft' ? 'Draft' : 'Published', items: db.exercises.filter(e => e.status === status),
   }));
-  const ids = groups.flatMap(g => g.items.map(e => e.id));
   const newExercise = () => drawer.open(
     <PickDrawer<ExerciseKind> title="New exercise" showCurrent={false}
       options={(Object.keys(KINDS) as ExerciseKind[]).map(k => ({ label: KINDS[k].label, sub: KINDS[k].description, value: k }))}
@@ -29,36 +26,28 @@ export function Exercises() {
   );
   return (
     <>
-      <SelectAllBar sel={sel} ids={ids} />
       {groups.map(g => (
         <section key={g.status}>
           <h3>{g.label}</h3>
           {g.items.length ? g.items.map(e => {
             const assigned = db.assignments.filter(a => a.exerciseId === e.id).length;
             const sub = `${KINDS[e.kind].label} · ${e.questions.length} questions` + (g.status === 'published' ? ` · ${assigned} assigned` : '');
-            return <SelectableRow key={e.id} sel={sel} id={e.id} label={e.title} sub={sub} onClick={() => go({ page: 'exercise', id: e.id })} />;
+            return <Row key={e.id} label={e.title} sub={sub} onClick={() => go({ page: 'exercise', id: e.id })} />;
           }) : <Empty>None</Empty>}
         </section>
       ))}
-      <Footer buttons={sel.selecting ? [
-        { label: 'Cancel', onClick: sel.cancel },
-        { label: `Duplicate (${sel.count})`, disabled: !sel.count, onClick: () => { duplicateExercises(sel.selected); sel.cancel(); } },
-      ] : [
-        { label: 'Select', onClick: sel.start },
-        { label: 'New exercise', onClick: newExercise },
-      ]} />
+      <Footer buttons={[{ label: 'New exercise', onClick: newExercise }]} />
     </>
   );
 }
 
 const TIME_LIMITS = [1, 2, 3, 4, 5, 10, 15];
 
-/** The sentence under an exercise's heading that says what kind it is. */
-const ABOUT_KIND: Record<ExerciseKind, ReactNode> = {
-  video: <>An exercise for watching a <b>video</b> and answering questions about it.</>,
-  read: <>An exercise for reading a <b>text</b> and answering questions about it.</>,
-  listen: <>An exercise for listening to a <b>recording</b> and answering questions about it.</>,
-  speaking: <>An exercise for answering <b>speaking questions</b> out loud.</>,
+/** The heading of the material section on an exercise page; speaking exercises have none. */
+const MATERIAL_HEADING: Record<Exclude<ExerciseKind, 'speaking'>, string> = {
+  video: 'Video to watch',
+  listen: 'Audio to listen to',
+  read: 'Text to read',
 };
 
 export function Exercise({ id }: { id: string }) {
@@ -80,25 +69,12 @@ export function Exercise({ id }: { id: string }) {
 
   return (
     <>
-      <p>
-        {ABOUT_KIND[e.kind]}{' '}
-        This is a <b>draft</b>.
-      </p>
+      <h3>General</h3>
       <Field label="Title" value={e.title} onClick={edit(() => drawer.open(
         <InputDrawer title="Title" initial={e.title} onDone={v => {
           if (!v.trim()) return 'Enter a title.';
           updateDraft(id, x => { x.title = v.trim(); });
         }} />))} />
-      {e.kind === 'video' && <>
-        <Field label="Video URL" value={e.material.url || 'Not set'} onClick={edit(() => drawer.open(
-          <InputDrawer title="Video URL" type="url" initial={e.material.url} onDone={v => {
-            updateDraft(id, x => { if (x.kind === 'video') x.material.url = v.trim(); });
-          }} />))} />
-        {e.material.url && <Field label="Clip" value={clipSummary(e.material)}
-          onClick={edit(() => drawer.open(<ClipDrawer id={id} />))} />}
-      </>}
-      {(e.kind === 'read' || e.kind === 'listen') &&
-        <Field label="Material" value={materialSummary(e)} onClick={() => go({ page: 'material', id })} />}
       <Field label="Time limit" value={e.timeLimit ? `${e.timeLimit} min` : 'No limit'} onClick={edit(() => drawer.open(
         <MenuDrawer<number | undefined> title="Time limit for the whole exercise"
           options={[{ label: 'No limit', value: undefined }, ...TIME_LIMITS.map(m => ({ label: `${m} min`, value: m }))]}
@@ -109,9 +85,27 @@ export function Exercise({ id }: { id: string }) {
           { label: 'One take only', value: false, sub: 'Like the real exam.' },
         ]} onPick={v => updateDraft(id, x => { x.allowRerecord = v; })} />))} />
 
+      {e.kind !== 'speaking' && <h3>{MATERIAL_HEADING[e.kind]}</h3>}
+      {e.kind === 'video' && <>
+        <Field label="Video URL" value={e.material.url || 'Not provided'} onClick={() => drawer.open(
+          <InputDrawer title="Video URL" type="url" initial={e.material.url} onDone={v => {
+            updateDraft(id, x => { if (x.kind === 'video') x.material.url = v.trim(); });
+          }} />)} />
+        {e.material.url && <Field label="Clip" value={clipSummary(e.material)}
+          onClick={() => drawer.open(<ClipDrawer id={id} />)} />}
+      </>}
+      {e.kind === 'listen' && (
+        <Field label="Audio" value={audioSummary(e.material.audio)} onClick={() => drawer.open(
+          <AudioDrawer title="Audio to listen to" value={e.material.audio} canDelete={false}
+            onChange={clip => updateDraft(id, x => { if (x.kind === 'listen') x.material = clip ? { audio: clip } : {}; })} />)} />
+      )}
+      {e.kind === 'read' && (
+        <Field label="Text" value={materialSummary(e)} onClick={() => go({ page: 'material', id })} />
+      )}
+
       <h3>Questions</h3>
       {e.questions.length ? e.questions.map((q, i) => (
-        <Row key={q.id} label={`${i + 1}. ${q.promptText || (q.promptAudio ? '(audio only)' : 'No prompt yet')}`}
+        <Row key={q.id} label={q.promptText || q.promptAudio ? `${i + 1}. ${q.promptText || '(audio only)'}` : <>{i + 1}. <Badge color="amber">No prompt yet</Badge></>}
           sub={[q.promptAudio ? 'Audio prompt' : '', q.targetSeconds ? `Target ${minutes(q.targetSeconds)}` : ''].filter(Boolean).join(' · ')}
           onClick={() => go({ page: 'question', exerciseId: id, questionId: q.id })} />
       )) : <Empty>No questions yet.</Empty>}
@@ -127,30 +121,22 @@ export function Exercise({ id }: { id: string }) {
   );
 }
 
-/** The heading over a locked exercise's material and questions. */
-const CONTENT_HEADING: Record<ExerciseKind, string> = {
-  video: 'Video and questions',
-  read: 'Text and questions',
-  listen: 'Recording and questions',
-  speaking: 'Questions',
-};
-
 /** A published exercise, read-only and compact: what students get, then who it's assigned to. */
 function LockedExercise({ e }: { e: ExerciseT }) {
   const db = useDb();
   const drawer = useDrawer();
   return (
     <>
-      <p>{ABOUT_KIND[e.kind]} It is <b>published</b>, so it's locked. Duplicate it to make changes.</p>
-      <p>
-        Time limit: {e.timeLimit ? `${e.timeLimit} min` : 'No limit'}<br />
-        Re-recording: {e.allowRerecord ? 'Allowed' : 'One take only'}
-      </p>
+      <p><small>Published exercises are locked. Duplicate it to make changes.</small></p>
+      <Facts items={[
+        ['Time limit', e.timeLimit ? `${e.timeLimit} min` : 'No limit'],
+        ['Re-recording', e.allowRerecord ? 'Allowed' : 'One take only'],
+      ]} />
 
-      <h3>{CONTENT_HEADING[e.kind]}</h3>
+      {e.kind !== 'speaking' && <h3>{MATERIAL_HEADING[e.kind]}</h3>}
       {e.kind === 'video' && (
         <div className="thumb" role="button" tabIndex={0} onClick={() => drawer.open(
-          <DrawerShell title="Video" actions={<button onClick={drawer.close}>Done</button>}>
+          <DrawerShell title="Video">
             <p>Students watch {clipRange(e.material)} of <a href={e.material.url} target="_blank" rel="noreferrer">this video</a>.</p>
           </DrawerShell>)}>
           <span className="thumb-play">{'\u25B6\uFE0E'}</span>
@@ -159,7 +145,7 @@ function LockedExercise({ e }: { e: ExerciseT }) {
       )}
       {e.kind === 'read' && (
         <div className="card" role="button" tabIndex={0} onClick={() => drawer.open(
-          <DrawerShell title="Text" actions={<button onClick={drawer.close}>Done</button>}>
+          <DrawerShell title="Text">
             <p style={{ whiteSpace: 'pre-wrap' }}>{e.material.text}</p>
           </DrawerShell>)}>
           {materialSummary(e)}
@@ -167,13 +153,12 @@ function LockedExercise({ e }: { e: ExerciseT }) {
       )}
       {e.kind === 'listen' && e.material.audio && (
         <div className="card" role="button" tabIndex={0} onClick={() => drawer.open(
-          <AudioDrawer title="Recording" value={e.material.audio} readOnly>
-            {e.material.sourceText && <p><small>{e.material.sourceText}</small></p>}
-          </AudioDrawer>)}>
+          <AudioDrawer title="Audio to listen to" value={e.material.audio} readOnly />)}>
           {'\u25B6\uFE0E'} Recording · {mmss(e.material.audio.duration)}
         </div>
       )}
 
+      <h3>Questions</h3>
       {e.questions.map((q, i) => {
         const open = q.promptAudio ? () => drawer.open(
           <AudioDrawer title={`Question ${i + 1}`} value={q.promptAudio} readOnly>

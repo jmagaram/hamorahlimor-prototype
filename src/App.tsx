@@ -1,6 +1,7 @@
 import { useDb } from './model/store';
 import { useStack, type Route } from './nav/nav';
-import { routeHeading } from './nav/titles';
+import { routeHeading, routeHeadingExtras } from './nav/titles';
+import { Badge } from './ui/Badge';
 import { AssignToStudent, AssignToStudents } from './pages/Assign';
 import { Assignment, Assignments } from './pages/Assignments';
 import { Material, QuestionEditor } from './pages/Editors';
@@ -32,12 +33,14 @@ export default function App() {
   const stack = useStack();
   const db = useDb();
   const top = stack[stack.length - 1];
+  const extras = routeHeadingExtras(db, top.route);
   return (
     <DrawerProvider>
       <Header />
       {/* key: a different page (or the same page with other params) starts with fresh state */}
       <main>
-        <h2>{routeHeading(db, top.route)}</h2>
+        {extras.kicker && <p className="kicker">{extras.kicker}</p>}
+        <h2>{routeHeading(db, top.route)}{extras.badges?.map(b => <span key={b.label}> <Badge color={b.color}>{b.label}</Badge></span>)}</h2>
         <Page key={top.key} route={top.route} />
       </main>
     </DrawerProvider>

@@ -40,7 +40,6 @@ export interface ReadMaterial {
 export interface ListenMaterial {
   /** Recorded by the teacher, always played whole. Absent in a draft that hasn't recorded it. */
   audio?: AudioClip;
-  sourceText?: string;
 }
 export type SpeakingMaterial = Record<string, never>;
 
