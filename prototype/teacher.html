@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Teacher prototype</title>
+<style>
+body{margin:0 auto;max-width:520px;font-family:system-ui,sans-serif}
+header{position:sticky;top:0;background:#fff;border-bottom:1px solid #ccc;padding:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;z-index:1}
+#crumbs{font-size:14px}
+main{padding:4px 12px 96px}
+footer{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;background:#fff;border-top:1px solid #ccc;padding:10px;display:flex;gap:8px;box-sizing:border-box}
+footer button,.bar button{flex:1 1 auto;padding:12px 10px;font-size:16px}
+.row{display:block;padding:10px 4px;border-bottom:1px solid #ddd}
+.row[onclick]{cursor:pointer}
+.chev{float:right;color:#888}
+#bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2}
+#drawer{display:none;position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:#fff;padding:4px 16px 16px;border-radius:12px 12px 0 0;max-height:80vh;overflow:auto;box-sizing:border-box;z-index:3}
+.open{display:block!important}
+.bar{display:flex;gap:8px;margin-top:12px}
+.err{color:#b00}
+textarea,input[type=text]{width:100%;box-sizing:border-box;font-size:16px}
+</style>
+</head>
+<body>
+<header>
+  <button id="homeBtn" onclick="home()">⌂ Home</button>
+  <button id="backBtn" onclick="back()">‹ Back</button>
+  <span id="crumbs"></span>
+</header>
+<main id="main"></main>
+<footer id="foot"></footer>
+<div id="bg" onclick="closeDrawer()"></div>
+<div id="drawer"></div>
+
+<script>
+const TODAY='2026-11-09', NEXT_WEEK='2026-11-16';
+const KINDS={
+  video:['Video','Students watch a video clip, then answer out loud.'],
+  read:['Read and respond','Students read a text, then answer out loud.'],
+  listen:['Listen and respond','Students listen to your recording, then answer out loud.'],
+  speaking:['Speaking questions','Students just answer your questions out loud.']
+};
+const GROUPS=['Needs review','Feedback draft','In progress','Paused','Not started','Done'];
+
+/* ---------- sample data ---------- */
+const db={
+  classes:['Aleph','Bet'],
+  students:[
+    {id:'s1',name:'Noa Levi',className:'Aleph',code:'K7P2',created:'2026-09-01'},
+    {id:'s2',name:'Itai Cohen',className:'Aleph',code:'M3Q9',created:'2026-09-01'},
+    {id:'s3',name:'Maya Peretz',className:'Aleph',code:'R8T4',created:'2026-09-02'},
+    {id:'s4',name:'Yonatan Mizrahi',className:'Bet',code:'B2X6',created:'2026-09-03'},
+    {id:'s5',name:'Tamar Biton',className:'Bet',code:'H5N1',created:'2026-09-03'}
+  ],
+  exercises:[
+    {id:'e1',title:'Climate change interview',kind:'video',status:'published',timeLimit:15,allowRerecord:true,created:'2026-10-01',
+     material:{url:'https://www.youtube.com/watch?v=abc123',start:'1:05',end:'3:20'},
+     questions:[
+       {id:'q1',text:'What is the main problem the speaker describes?',audio:false,target:60},
+       {id:'q2',text:'Why does the speaker think young people should care?',audio:false,target:60},
+       {id:'q3',text:'Do you agree with the speaker? Explain.',audio:true,target:90}]},
+    {id:'e2',title:'My project',kind:'speaking',status:'published',timeLimit:null,allowRerecord:false,created:'2026-10-12',
+     material:{},
+     questions:[
+       {id:'q4',text:'What is your project about?',audio:true,target:60},
+       {id:'q5',text:'How did the project influence you?',audio:false,target:90}]},
+    {id:'e3',title:'Weekend plans',kind:'listen',status:'draft',timeLimit:10,allowRerecord:true,created:'2026-11-05',
+     material:{audio:true,sourceText:'This weekend I am going to visit my grandmother in Beersheba...'},
+     questions:[{id:'q6',text:'Where is the speaker going this weekend?',audio:false,target:30}]},
+    {id:'e4',title:'A letter from camp',kind:'read',status:'draft',timeLimit:null,allowRerecord:true,created:'2026-11-08',
+     material:{text:'Dear Mom and Dad,\nCamp is great so far. On the first day we...'},questions:[]}
+  ],
+  assignments:[
+    {id:'a1',studentId:'s1',exerciseId:'e1',assigned:'2026-11-01',due:'2026-11-10',state:'submitted',secondsTaken:812,started:'2026-11-03',submitted:'2026-11-04'},
+    {id:'a2',studentId:'s2',exerciseId:'e1',assigned:'2026-11-01',due:'2026-11-10',state:'active',secondsTaken:300,started:'2026-11-08',submitted:null},
+    {id:'a3',studentId:'s3',exerciseId:'e1',assigned:'2026-11-01',due:'2026-11-10',state:'submitted',secondsTaken:690,started:'2026-11-02',submitted:'2026-11-02'},
+    {id:'a4',studentId:'s4',exerciseId:'e2',assigned:'2026-11-03',due:'2026-11-12',state:'submitted',secondsTaken:410,started:'2026-11-05',submitted:'2026-11-05'},
+    {id:'a5',studentId:'s5',exerciseId:'e2',assigned:'2026-11-03',due:'2026-11-12',state:'notStarted',secondsTaken:0,started:null,submitted:null},
+    {id:'a6',studentId:'s1',exerciseId:'e2',assigned:'2026-11-03',due:'2026-11-12',state:'paused',secondsTaken:120,started:'2026-11-07',submitted:null}
+  ],
+  answers:{
+    a1:{q1:{duration:72},q2:{duration:48},q3:{duration:95}},
+    a2:{q1:{duration:55}},
+    a3:{q1:{duration:60},q2:{duration:58},q3:{duration:80}},
+    a4:{q4:{duration:70},q5:{duration:85}},
+    a6:{q4:{duration:40}}
+  },
+  feedback:{
+    a3:{overall:{text:'Clear and well organized. Work on linking words.',audio:false},
+        answers:{q1:{text:'Good summary.',audio:false},q3:{text:'',audio:true}},
+        status:'published',started:'2026-11-03',published:'2026-11-03'},
+    a4:{overall:{text:'',audio:false},answers:{q4:{text:'Nice detail about the robot.',audio:false}},
+        status:'draft',started:'2026-11-06',published:null}
+  }
+};
+
+/* ---------- helpers ---------- */
+let uid=100;
+const nid=p=>p+(uid++);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mmss=s=>s==null?'—':Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const S=id=>db.students.find(x=>x.id===id);
+const E=id=>db.exercises.find(x=>x.id===id);
+const A=id=>db.assignments.find(x=>x.id===id);
+const newCode=()=>Array.from({length:4},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*31)]).join('');
+const cur=()=>stack[stack.length-1];
+
+function aStatus(a){
+  const f=db.feedback[a.id];
+  if(a.state==='submitted') return !f?'Needs review':(f.status==='published'?'Done':'Feedback draft');
+  return {notStarted:'Not started',active:'In progress',paused:'Paused'}[a.state];
+}
+function row(label,sub,js){
+  return `<div class="row"${js?` onclick="${js}"`:''}>${js?'<span class="chev">›</span>':''}${esc(label)}${sub?`<br><small>${esc(sub)}</small>`:''}</div>`;
+}
+function field(label,val,js){
+  return `<div class="row"${js?` onclick="${js}"`:''}>${js?'<span class="chev">›</span>':''}<small>${esc(label)}</small><br>${esc(val)}</div>`;
+}
+function link(text,js){return `<a href="#" onclick="${js};return false">${esc(text)}</a>`}
+function playToggle(b){b.textContent=b.textContent.startsWith('▶')?'❚❚ Pause':'▶ Play'}
+function playBtn(){return `<button onclick="playToggle(this)">▶ Play</button>`}
+
+/* fake audio record widget: state lives in the page's tmp.aw */
+function aw(key,ro){return `<span id="aw-${key}">${awInner(key,cur().params.tmp.aw[key],ro)}</span>`}
+function awInner(key,has,ro){
+  if(has) return playBtn()+(ro?'':` <button onclick="awSet('${key}',true)">Re-record</button> <button onclick="awSet('${key}',false)">Remove</button>`);
+  return ro?'<small>None</small>':`<button onclick="awSet('${key}',true)">● Record</button>`;
+}
+function awSet(key,v){cur().params.tmp.aw[key]=v;$('aw-'+key).innerHTML=awInner(key,v,false)}
+
+/* ---------- selection mode ---------- */
+let selecting=false, sel=new Set(), pageIds=[];
+function resetSel(){selecting=false;sel.clear()}
+function startSel(){selecting=true;sel.clear();render(true)}
+function cancelSel(){resetSel();render(true)}
+function tog(id,on){on?sel.add(id):sel.delete(id);render(true)}
+function selAll(on){pageIds.forEach(id=>on?sel.add(id):sel.delete(id));render(true)}
+function selBar(ids){
+  const all=ids.length&&ids.every(id=>sel.has(id));
+  return `<p><label><input type="checkbox" ${all?'checked':''} onchange="selAll(this.checked)"> Select all</label> · ${sel.size} selected</p>`;
+}
+function selRow(id,label,sub,js){
+  if(!selecting) return row(label,sub,js);
+  return `<label class="row"><input type="checkbox" ${sel.has(id)?'checked':''} onchange="tog('${id}',this.checked)"> ${esc(label)}${sub?`<br><small>${esc(sub)}</small>`:''}</label>`;
+}
+function groupAssign(list,label,sub,selectable,ids){
+  const html=GROUPS.map(g=>{
+    const xs=list.filter(a=>aStatus(a)===g);
+    if(!xs.length) return '';
+    return `<h3>${g} (${xs.length})</h3>`+xs.map(a=>{
+      if(ids) ids.push(a.id);
+      const js=`go('assignment',{id:'${a.id}'})`;
+      return selectable?selRow(a.id,label(a),sub(a),js):row(label(a),sub(a),js);
+    }).join('');
+  }).join('');
+  return html||'<p><small>No assignments.</small></p>';
+}
+
+/* ---------- navigation ---------- */
+let stack=[];
+function go(page,params={}){
+  const key=page+JSON.stringify(params);
+  const i=stack.findIndex(s=>s.key===key);
+  if(i>=0) stack=stack.slice(0,i+1);          // already in the trail: jump back to it
+  else stack.push({page,params,key});
+  resetSel();render();
+}
+function back(){if(stack.length>1){stack.pop();resetSel();render()}}
+function home(){stack=[{page:'home',params:{},key:'home{}'}];resetSel();render()}
+function crumb(i){stack=stack.slice(0,i+1);resetSel();render()}
+
+/* ---------- drawer ---------- */
+let dDone=null;
+function drawer(title,body,onDone,doneLabel='Done'){
+  dDone=onDone||null;
+  $('drawer').innerHTML=`<h3>${title}</h3>${body}<p class="err" id="dErr"></p><div class="bar">${
+    onDone?`<button onclick="closeDrawer()">Cancel</button><button onclick="drawerDone()">${doneLabel}</button>`
+          :`<button onclick="closeDrawer();render(true)">Close</button>`}</div>`;
+  $('drawer').classList.add('open');$('bg').classList.add('open');
+}
+function closeDrawer(){$('drawer').classList.remove('open');$('bg').classList.remove('open')}
+function drawerDone(){
+  const r=dDone();
+  if(typeof r==='string'){$('dErr').textContent=r;return}
+  if(r!==false){closeDrawer();render(true)}
+}
+function ask(title,val,fn,type='text'){
+  drawer(esc(title),`<input id="dIn" type="${type}" value="${esc(val)}" style="width:100%;font-size:16px;padding:8px;box-sizing:border-box">`,
+    ()=>fn($('dIn').value));
+  setTimeout(()=>$('dIn').focus(),50);
+}
+function confirmDrawer(title,msg,label,fn){drawer(esc(title),`<p>${esc(msg)}</p>`,fn,label)}
+let pickOpts=[],pickFn=null;
+function pick(title,opts,curVal,fn){
+  pickOpts=opts;pickFn=fn;
+  drawer(esc(title),opts.map((o,i)=>`<div class="row" onclick="pickDone(${i})">${
+    curVal===undefined?'':(o.value===curVal?'● ':'○ ')}${esc(o.label)}${o.sub?`<br><small>${esc(o.sub)}</small>`:''}</div>`).join(''));
+}
+function pickDone(i){pickFn(pickOpts[i].value);closeDrawer();render(true)}
+
+/* ---------- pages ---------- */
+const P={};
+const gone=()=>({title:'Not found',body:'<p>This item was deleted.</p>'});
+
+P.home=()=>{
+  const n=db.assignments.filter(a=>aStatus(a)==='Needs review').length;
+  return {title:'Home',body:`<h2>English practice</h2>`+
+    row('Needs review',n+' submitted, waiting for feedback',"go('assignments')")+
+    row('Exercises',db.exercises.length+' exercises',"go('exercises')")+
+    row('Students',db.students.length+' students',"go('students')")+
+    row('Assignments',db.assignments.length+' assignments',"go('assignments')")+
+    row('Classes',db.classes.join(', '),"go('classes')")};
+};
+
+/* Classes */
+P.classes=()=>({title:'Classes',
+  body:db.classes.map((c,i)=>row(c,db.students.filter(s=>s.className===c).length+' students',`classDrawer(${i})`)).join('')||'<p>No classes yet.</p>',
+  footer:[['Add class','addClass()']]});
+function addClass(){ask('Add class','',v=>{
+  v=v.trim(); if(!v) return 'Enter a name.';
+  if(db.classes.includes(v)) return 'That class already exists.';
+  db.classes.push(v);
+})}
+function classDrawer(i){
+  const c=db.classes[i], st=db.students.filter(s=>s.className===c);
+  drawer(esc(c),
+    (st.length?st.map(s=>row(s.name,'',`go('student',{id:'${s.id}'})`)).join(''):'<p>No students in this class.</p>')+
+    (st.length?'<p><small>Move students to another class before deleting this one.</small></p>'
+              :`<p><button onclick="db.classes.splice(${i},1);closeDrawer();render(true)">Delete class</button></p>`));
+}
+
+/* Students */
+P.students=()=>{
+  const ids=[];let body='';
+  for(const c of db.classes){
+    const st=db.students.filter(s=>s.className===c);
+    body+=`<h3>${esc(c)}</h3>`+(st.map(s=>{ids.push(s.id);
+      const open=db.assignments.filter(a=>a.studentId===s.id&&a.state!=='submitted').length;
+      return selRow(s.id,s.name,open?open+' open assignments':'',`go('student',{id:'${s.id}'})`)}).join('')||'<p><small>No students</small></p>');
+  }
+  return {title:'Students',ids,body:(selecting?selBar(ids):'')+body,
+    footer:selecting?[['Cancel','cancelSel()'],[`Change class (${sel.size})`,'bulkClass()',!sel.size],[`Delete (${sel.size})`,'bulkDelStudents()',!sel.size]]
+                    :[['Select','startSel()'],['Add student','addStudent()']]};
+};
+function addStudent(){
+  drawer('Add student',`<p><label>Name<br><input type="text" id="dName"></label></p>
+    <p><label>Class<br><select id="dClass">${db.classes.map(c=>`<option>${esc(c)}</option>`).join('')}</select></label></p>
+    <p><small>A security code is created automatically.</small></p>`,
+  ()=>{const n=$('dName').value.trim(); if(!n) return 'Enter a name.';
+    db.students.push({id:nid('s'),name:n,className:$('dClass').value,code:newCode(),created:TODAY});});
+}
+function bulkClass(){pick('Move to class',db.classes.map(c=>({label:c,value:c})),undefined,v=>{sel.forEach(id=>S(id).className=v);resetSel()})}
+function bulkDelStudents(){confirmDrawer(`Delete ${sel.size} students?`,'Their assignments, answers and feedback are deleted too.','Delete',()=>{
+  sel.forEach(id=>{db.students=db.students.filter(s=>s.id!==id);
+    db.assignments.filter(a=>a.studentId===id).forEach(a=>removeAssignment(a.id));});
+  resetSel();
+})}
+
+P.student=({id})=>{
+  const s=S(id); if(!s) return gone();
+  const as=db.assignments.filter(a=>a.studentId===id);
+  return {title:s.name,body:
+    field('Name',s.name,`editStudentName('${id}')`)+
+    field('Class',s.className,`pickStudentClass('${id}')`)+
+    field('Security code','••••  (tap to show)',`codeDrawer('${id}')`)+
+    field('Created',s.created)+
+    '<h3>Assignments</h3>'+
+    groupAssign(as,a=>E(a.exerciseId).title,a=>'Due '+a.due),
+    footer:[['Assign exercise',`go('assign',{student:'${id}'})`]]};
+};
+function editStudentName(id){ask('Name',S(id).name,v=>{v=v.trim();if(!v)return 'Enter a name.';S(id).name=v})}
+function pickStudentClass(id){pick('Class',db.classes.map(c=>({label:c,value:c})),S(id).className,v=>S(id).className=v)}
+function codeDrawer(id){
+  const s=S(id);
+  drawer('Security code',`<p style="font-size:36px;letter-spacing:6px;margin:8px 0"><b>${esc(s.code)}</b></p>
+    <p><small>${esc(s.name)} signs in with this code.</small></p>
+    <button onclick="S('${id}').code=newCode();codeDrawer('${id}')">Generate new code</button>`);
+}
+
+/* Exercises */
+P.exercises=()=>{
+  const ids=[];let body='';
+  for(const [st,label] of [['draft','Draft'],['published','Published']]){
+    const xs=db.exercises.filter(e=>e.status===st);
+    body+=`<h3>${label} (${xs.length})</h3>`+(xs.map(e=>{ids.push(e.id);
+      const n=db.assignments.filter(a=>a.exerciseId===e.id).length;
+      const sub=KINDS[e.kind][0]+' · '+e.questions.length+' questions'+(st==='published'?' · '+n+' assigned':'');
+      return selRow(e.id,e.title,sub,`go('exercise',{id:'${e.id}'})`)}).join('')||'<p><small>None</small></p>');
+  }
+  return {title:'Exercises',ids,body:(selecting?selBar(ids):'')+body,
+    footer:selecting?[['Cancel','cancelSel()'],[`Duplicate (${sel.size})`,'bulkDup()',!sel.size]]
+                    :[['Select','startSel()'],['New exercise','newExercise()']]};
+};
+function newExercise(){
+  pick('New exercise',Object.entries(KINDS).map(([k,[l,s]])=>({label:l,sub:s,value:k})),undefined,k=>{
+    const e={id:nid('e'),title:'Untitled '+KINDS[k][0].toLowerCase(),kind:k,status:'draft',timeLimit:null,allowRerecord:true,created:TODAY,material:{},questions:[]};
+    db.exercises.push(e);go('exercise',{id:e.id});
+  });
+}
+function copyExercise(id){
+  const c=structuredClone(E(id));
+  c.id=nid('e');c.title='Copy of '+c.title;c.status='draft';c.created=TODAY;
+  c.questions.forEach(q=>q.id=nid('q'));
+  db.exercises.push(c);return c;
+}
+function bulkDup(){sel.forEach(copyExercise);resetSel();render(true)}
+
+function matSummary(e){
+  const m=e.material;
+  if(e.kind==='video') return m.url?`${m.url} (${m.start||'start'} – ${m.end||'end'})`:'Not set';
+  if(e.kind==='read') return m.text?m.text.slice(0,60)+(m.text.length>60?'…':''):'Not set';
+  if(e.kind==='listen') return m.audio?'Recording'+(m.sourceText?' + text':''):'Not recorded';
+  return '';
+}
+P.exercise=({id})=>{
+  const e=E(id); if(!e) return gone();
+  const draft=e.status==='draft', ed=js=>draft?js:'';
+  let body=(draft?'':'<p><i>Published: locked. Duplicate it to make changes.</i></p>')+
+    field('Title',e.title,ed(`editTitle('${id}')`))+
+    field('Kind',KINDS[e.kind][0])+
+    (e.kind!=='speaking'?field('Material',matSummary(e),`go('material',{id:'${id}'})`):'')+
+    field('Time limit',e.timeLimit?e.timeLimit+' min':'No limit',ed(`pickLimit('${id}')`))+
+    field('Re-recording',e.allowRerecord?'Allowed':'One take only',ed(`pickRerec('${id}')`))+
+    field('Status',draft?'Draft':'Published')+
+    '<h3>Questions</h3>'+
+    (e.questions.map((q,i)=>row(`${i+1}. ${q.text||'(audio only)'}`,
+      [q.audio?'Audio prompt':'',q.target?'Target '+mmss(q.target):''].filter(Boolean).join(' · '),
+      `go('question',{ex:'${id}',q:'${q.id}'})`)).join('')||'<p><small>No questions yet.</small></p>')+
+    (draft?`<p>${link('+ Add question',`go('question',{ex:'${id}'})`)}</p>`:'');
+  if(!draft) body+='<h3>Assigned to</h3>'+groupAssign(db.assignments.filter(a=>a.exerciseId===id),a=>S(a.studentId).name,a=>S(a.studentId).className+' · due '+a.due);
+  return {title:e.title,body,
+    footer:draft?[['Delete',`delExercise('${id}')`],['Publish',`publish('${id}')`]]
+                :[['Duplicate',`dupExercise('${id}')`],['Assign',`go('assign',{ex:'${id}'})`]]};
+};
+function editTitle(id){ask('Title',E(id).title,v=>{v=v.trim();if(!v)return 'Enter a title.';E(id).title=v})}
+function pickLimit(id){pick('Time limit for the whole exercise',[{label:'No limit',value:null},...[5,10,15,20,30].map(m=>({label:m+' min',value:m}))],E(id).timeLimit,v=>E(id).timeLimit=v)}
+function pickRerec(id){pick('Re-recording',[
+  {label:'Allowed',value:true,sub:'Students can re-record an answer before submitting.'},
+  {label:'One take only',value:false,sub:'Like the real exam.'}],E(id).allowRerecord,v=>E(id).allowRerecord=v)}
+function publish(id){
+  const e=E(id),m=e.material;
+  const missing=!e.questions.length?'Add at least one question.':
+    (e.kind==='video'&&!m.url)?'Add the video URL.':(e.kind==='read'&&!m.text)?'Add the text to read.':
+    (e.kind==='listen'&&!m.audio)?'Record the audio.':'';
+  if(missing) return drawer("Can't publish yet",`<p>${missing}</p>`);
+  confirmDrawer('Publish exercise?','Once published it is locked and can be assigned. To change it later, duplicate it.','Publish',()=>{e.status='published'});
+}
+function delExercise(id){confirmDrawer('Delete this draft?','This cannot be undone.','Delete',()=>{db.exercises=db.exercises.filter(e=>e.id!==id);stack.pop()})}
+function dupExercise(id){const c=copyExercise(id);go('exercise',{id:c.id})}
+
+/* Material editor (full page) */
+P.material=(params)=>{
+  const e=E(params.id), ro=e.status!=='draft', m=e.material, dis=ro?'disabled':'';
+  params.tmp??={aw:{m:!!m.audio}};
+  let body=`<p><small>${esc(e.title)} · ${KINDS[e.kind][0]}</small></p>`;
+  if(e.kind==='video') body+=`<p><label>YouTube URL<br><input type="text" id="mUrl" ${dis} value="${esc(m.url)}"></label></p>
+    <p><label>Start <input id="mStart" size="6" placeholder="0:00" ${dis} value="${esc(m.start)}"></label>
+       <label>End <input id="mEnd" size="6" placeholder="end" ${dis} value="${esc(m.end)}"></label></p>
+    <p><small>Leave start or end blank to use the whole video.</small></p>`;
+  if(e.kind==='read') body+=`<p><label>Text students read<br><textarea id="mText" rows="14" ${dis}>${esc(m.text)}</textarea></label></p>`;
+  if(e.kind==='listen') body+=`<p>Recording: ${aw('m',ro)}</p>
+    <p><label>Text of the recording (optional)<br><textarea id="mSrc" rows="6" ${dis}>${esc(m.sourceText)}</textarea></label></p>
+    <p><small>Shown to you while reviewing. Later: generate the recording from this text.</small></p>`;
+  return {title:'Material',body,footer:ro?[['Back','back()']]:[['Cancel','back()'],['OK',`saveMaterial('${params.id}')`]]};
+};
+function saveMaterial(id){
+  const e=E(id),v=x=>$(x)?.value??'';
+  if(e.kind==='video') e.material={url:v('mUrl').trim(),start:v('mStart').trim(),end:v('mEnd').trim()};
+  if(e.kind==='read') e.material={text:v('mText')};
+  if(e.kind==='listen') e.material={audio:cur().params.tmp.aw.m,sourceText:v('mSrc')};
+  back();
+}
+
+/* Question editor (full page) */
+P.question=(params)=>{
+  const e=E(params.ex), ro=e.status!=='draft', q=params.q?e.questions.find(x=>x.id===params.q):null, dis=ro?'disabled':'';
+  if(params.q&&!q) return gone();
+  params.tmp??={aw:{p:!!q?.audio}};
+  const n=q?e.questions.indexOf(q)+1:e.questions.length+1;
+  return {title:'Question '+n,body:`<p><small>${esc(e.title)}</small></p>
+    <p><label>Prompt text<br><textarea id="qText" rows="4" ${dis}>${esc(q?.text)}</textarea></label></p>
+    <p>Prompt audio: ${aw('p',ro)}</p>
+    <p><label>Target answer length<br><select id="qTarget" ${dis}>${[0,30,45,60,90,120].map(v=>
+      `<option value="${v}" ${(q?.target||0)===v?'selected':''}>${v?mmss(v):'No target'}</option>`).join('')}</select></label></p>
+    <p><small>A goal, not a cutoff. Students see when they go over.</small></p>
+    <p class="err" id="qErr"></p>`,
+    footer:ro?[['Back','back()']]:[['Cancel','back()'],...(q?[['Delete',`delQuestion('${e.id}','${q.id}')`]]:[]),['OK',`saveQuestion('${e.id}','${q?.id||''}')`]]};
+};
+function saveQuestion(exId,qId){
+  const e=E(exId),text=$('qText').value.trim(),audio=cur().params.tmp.aw.p,target=+$('qTarget').value||null;
+  if(!text&&!audio){$('qErr').textContent='Add prompt text, a recording, or both.';return}
+  if(qId) Object.assign(e.questions.find(x=>x.id===qId),{text,audio,target});
+  else e.questions.push({id:nid('q'),text,audio,target});
+  back();
+}
+function delQuestion(exId,qId){confirmDrawer('Delete this question?','','Delete',()=>{const e=E(exId);e.questions=e.questions.filter(q=>q.id!==qId);stack.pop()})}
+
+/* Assign (full page) — from an exercise (pick students) or from a student (pick exercise) */
+P.assign=(params)=>{
+  const due=`<p><label>Due date <input type="date" id="aDue" value="${NEXT_WEEK}"></label></p>`;
+  if(params.ex){
+    const e=E(params.ex);
+    const already=new Set(db.assignments.filter(a=>a.exerciseId===e.id).map(a=>a.studentId));
+    let body=`<p>Exercise: <b>${esc(e.title)}</b></p>${due}<p>Choose students. Tick a class to select all of it.</p>`;
+    db.classes.forEach((c,i)=>{
+      body+=`<h3><label><input type="checkbox" onchange="classCheck(this,${i})"> ${esc(c)}</label></h3>`+
+        db.students.filter(s=>s.className===c).map(s=>`<label class="row"><input type="checkbox" class="stu" data-c="${i}" value="${s.id}" ${already.has(s.id)?'disabled':''}> ${esc(s.name)}${already.has(s.id)?' <small>(already assigned)</small>':''}</label>`).join('');
+    });
+    return {title:'Assign',body:body+'<p class="err" id="aErr"></p>',footer:[['Cancel','back()'],['Assign','doAssignEx()']]};
+  }
+  const s=S(params.student);
+  const already=new Set(db.assignments.filter(a=>a.studentId===s.id).map(a=>a.exerciseId));
+  const pub=db.exercises.filter(e=>e.status==='published');
+  return {title:'Assign',body:`<p>Student: <b>${esc(s.name)}</b></p>${due}<p>Choose a published exercise:</p>`+
+    (pub.map(e=>`<label class="row"><input type="radio" name="ex" value="${e.id}" ${already.has(e.id)?'disabled':''}> ${esc(e.title)}<br><small>${KINDS[e.kind][0]}${already.has(e.id)?' · already assigned':''}</small></label>`).join('')||'<p>No published exercises.</p>')+
+    '<p class="err" id="aErr"></p>',
+    footer:[['Cancel','back()'],['Assign','doAssignStudent()']]};
+};
+function classCheck(cb,i){document.querySelectorAll(`.stu[data-c="${i}"]:not(:disabled)`).forEach(x=>x.checked=cb.checked)}
+function makeAssignment(studentId,exerciseId,due){
+  db.assignments.push({id:nid('a'),studentId,exerciseId,assigned:TODAY,due,state:'notStarted',secondsTaken:0,started:null,submitted:null});
+}
+function doAssignEx(){
+  const ids=[...document.querySelectorAll('.stu:checked')].map(x=>x.value), due=$('aDue').value;
+  if(!ids.length){$('aErr').textContent='Choose at least one student.';return}
+  if(!due){$('aErr').textContent='Choose a due date.';return}
+  ids.forEach(id=>makeAssignment(id,cur().params.ex,due));back();
+}
+function doAssignStudent(){
+  const r=document.querySelector('input[name=ex]:checked'), due=$('aDue').value;
+  if(!r){$('aErr').textContent='Choose an exercise.';return}
+  if(!due){$('aErr').textContent='Choose a due date.';return}
+  makeAssignment(cur().params.student,r.value,due);back();
+}
+
+/* Assignments */
+P.assignments=()=>{
+  const ids=[];
+  const body=groupAssign(db.assignments,a=>S(a.studentId).name+' · '+E(a.exerciseId).title,a=>S(a.studentId).className+' · due '+a.due,true,ids);
+  return {title:'Assignments',ids,body:(selecting?selBar(ids):'')+body,
+    footer:selecting?[['Cancel','cancelSel()'],[`Due date (${sel.size})`,'bulkDue()',!sel.size],[`Unassign (${sel.size})`,'bulkUnassign()',!sel.size]]
+                    :[['Select','startSel()']]};
+};
+function removeAssignment(id){db.assignments=db.assignments.filter(a=>a.id!==id);delete db.answers[id];delete db.feedback[id]}
+function bulkDue(){ask('Due date',NEXT_WEEK,v=>{if(!v)return 'Choose a date.';sel.forEach(id=>A(id).due=v);resetSel()},'date')}
+function bulkUnassign(){confirmDrawer(`Unassign ${sel.size}?`,'Any answers and feedback are deleted.','Unassign',()=>{sel.forEach(removeAssignment);resetSel()})}
+
+P.assignment=({id})=>{
+  const a=A(id); if(!a) return gone();
+  const s=S(a.studentId), e=E(a.exerciseId), f=db.feedback[id], ans=db.answers[id]||{};
+  let body=
+    field('Student',s.name+' ('+s.className+')',`go('student',{id:'${s.id}'})`)+
+    field('Exercise',e.title,`go('exercise',{id:'${e.id}'})`)+
+    field('Status',aStatus(a))+
+    field('Due',a.due,`editDue('${id}')`)+
+    field('Assigned',a.assigned)+
+    field('Started',a.started||'—')+
+    field('Time taken',mmss(a.secondsTaken)+(e.timeLimit?` of ${e.timeLimit}:00`:''))+
+    field('Submitted',a.submitted||'—')+
+    '<h3>Answers</h3>'+e.questions.map((q,i)=>{
+      const an=ans[q.id], c=f?.answers?.[q.id];
+      return `<div class="row"><small>Q${i+1}</small> ${esc(q.text||'(audio prompt)')}<br>${
+        an?`${playBtn()} ${mmss(an.duration)}${q.target?` / target ${mmss(q.target)}${an.duration>q.target?' (over)':''}`:''}`:'<small>No answer yet</small>'}${
+        c&&(c.text||c.audio)?`<br><small>Your comment: ${esc(c.text)}${c.audio?' [audio]':''}</small>`:''}</div>`;
+    }).join('')+
+    '<h3>Feedback</h3>'+(f?`<p>${f.status==='published'?'Published '+f.published:'Draft (student cannot see it)'}${
+      f.overall.text||f.overall.audio?`<br><small>Overall: ${esc(f.overall.text)}${f.overall.audio?' [audio]':''}</small>`:''}</p>`:'<p><small>Not started.</small></p>');
+  const reviewLabel=!f?'Review':f.status==='published'?'Edit feedback':'Continue review';
+  return {title:s.name+' · '+e.title,body,
+    footer:[['Unassign',`unassign('${id}')`],...(a.state==='submitted'?[[reviewLabel,`go('review',{id:'${id}'})`]]:[])]};
+};
+function editDue(id){ask('Due date',A(id).due,v=>{if(!v)return 'Choose a date.';A(id).due=v},'date')}
+function unassign(id){confirmDrawer('Unassign?','Any answers and feedback are deleted.','Unassign',()=>{removeAssignment(id);stack.pop()})}
+
+/* Review (full page) */
+P.review=(params)=>{
+  const a=A(params.id); if(!a) return gone();
+  const e=E(a.exerciseId), s=S(a.studentId), f=db.feedback[a.id], ans=db.answers[a.id]||{};
+  params.tmp??={aw:Object.fromEntries([['overall',!!f?.overall?.audio],...e.questions.map(q=>['c_'+q.id,!!f?.answers?.[q.id]?.audio])])};
+  let body=`<p><b>${esc(s.name)}</b> · ${esc(e.title)}<br><small>Feedback: ${f?f.status:'not started'}. The student sees nothing until you publish.</small></p>`;
+  if(e.kind==='listen'&&e.material.sourceText) body+=`<details><summary>Recording text</summary><p>${esc(e.material.sourceText)}</p></details>`;
+  e.questions.forEach((q,i)=>{
+    const an=ans[q.id];
+    body+=`<hr><h3>Question ${i+1}</h3><p>${esc(q.text)}${q.audio?' '+playBtn():''}</p>
+      <p>Answer: ${an?`${playBtn()} ${mmss(an.duration)}${q.target?` / target ${mmss(q.target)}${an.duration>q.target?' (over)':''}`:''}`:'<small>No answer</small>'}</p>
+      <p><label>Comment<br><textarea id="t_${q.id}" rows="3">${esc(f?.answers?.[q.id]?.text)}</textarea></label></p>
+      <p>Audio comment: ${aw('c_'+q.id)}</p>`;
+  });
+  body+=`<hr><h3>Overall</h3><p><label>Comment<br><textarea id="t_overall" rows="4">${esc(f?.overall?.text)}</textarea></label></p>
+    <p>Audio comment: ${aw('overall')}</p>`;
+  return {title:'Review',body,footer:[['Cancel','back()'],['Save draft',`saveFb('${a.id}','draft')`],['Publish',`saveFb('${a.id}','published')`]]};
+};
+function saveFb(id,status){
+  const a=A(id),e=E(a.exerciseId),t=cur().params.tmp.aw,old=db.feedback[id];
+  db.feedback[id]={
+    overall:{text:$('t_overall').value.trim(),audio:t.overall},
+    answers:Object.fromEntries(e.questions.map(q=>[q.id,{text:$('t_'+q.id).value.trim(),audio:t['c_'+q.id]}])),
+    status,started:old?.started||TODAY,published:status==='published'?TODAY:null
+  };
+  back();
+}
+
+/* ---------- render ---------- */
+function render(keep){
+  closeDrawer();
+  const t=cur(), p=P[t.page](t.params);
+  t.title=p.title; pageIds=p.ids||[];
+  $('crumbs').innerHTML=stack.map((s,i)=>i<stack.length-1?link(s.title,`crumb(${i})`):`<b>${esc(p.title)}</b>`).join(' › ');
+  $('backBtn').disabled=stack.length<2;
+  $('homeBtn').disabled=stack.length<2;
+  $('main').innerHTML=p.body;
+  const f=p.footer||[];
+  $('foot').style.display=f.length?'flex':'none';
+  $('foot').innerHTML=f.map(([l,js,dis])=>`<button onclick="${js}" ${dis?'disabled':''}>${esc(l)}</button>`).join('');
+  if(!keep) window.scrollTo(0,0);
+}
+home();
+</script>
+</body>
+</html>
