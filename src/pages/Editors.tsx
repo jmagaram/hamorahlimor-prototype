@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { KINDS } from '../model/derived';
-import { mmss } from '../model/format';
-import { deleteQuestion, saveQuestion, updateDraft, useDb } from '../model/store';
-import type { AudioRef, Exercise } from '../model/types';
+import { audioSummary, KINDS } from '../model/derived';
+import { minutes } from '../model/format';
+import { deleteQuestion, updateDraft, updateQuestion, useDb } from '../model/store';
+import type { AudioClip, Exercise, Question } from '../model/types';
 import { back } from '../nav/nav';
-import { AudioField } from '../ui/audio';
-import { ConfirmDrawer } from '../ui/Drawer';
+import { AudioDrawer } from '../ui/audio';
+import { ConfirmDrawer, InputDrawer, MenuDrawer } from '../ui/Drawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer, type FooterButton } from '../ui/Footer';
+import { Field } from '../ui/rows';
 import { NotFound } from './NotFound';
 
 const editorFooter = (readOnly: boolean, ok: () => void, extra: FooterButton[] = []): FooterButton[] =>
@@ -21,19 +22,17 @@ export function Material({ id }: { id: string }) {
   return <MaterialForm e={e} />;
 }
 
+/** Read and listen material. Video is edited on Exercise detail (URL and clip drawers). */
 function MaterialForm({ e }: { e: Exercise }) {
+  const drawer = useDrawer();
   const ro = e.status !== 'draft';
   // Form state starts from the saved material and is written back only on OK.
-  const [url, setUrl] = useState(e.kind === 'video' ? e.material.url : '');
-  const [start, setStart] = useState(e.kind === 'video' ? e.material.start ?? '' : '');
-  const [end, setEnd] = useState(e.kind === 'video' ? e.material.end ?? '' : '');
   const [text, setText] = useState(e.kind === 'read' ? e.material.text : '');
-  const [audio, setAudio] = useState<AudioRef | undefined>(e.kind === 'listen' ? e.material.audio : undefined);
+  const [audio, setAudio] = useState<AudioClip | undefined>(e.kind === 'listen' ? e.material.audio : undefined);
   const [sourceText, setSourceText] = useState(e.kind === 'listen' ? e.material.sourceText ?? '' : '');
 
   const ok = () => {
     updateDraft(e.id, x => {
-      if (x.kind === 'video') x.material = { url: url.trim(), ...(start.trim() && { start: start.trim() }), ...(end.trim() && { end: end.trim() }) };
       if (x.kind === 'read') x.material = { text };
       if (x.kind === 'listen') x.material = { ...(audio && { audio }), ...(sourceText.trim() && { sourceText }) };
     });
@@ -43,19 +42,12 @@ function MaterialForm({ e }: { e: Exercise }) {
   return (
     <>
       <p><small>{e.title} · {KINDS[e.kind].label}</small></p>
-      {e.kind === 'video' && <>
-        <p><label>YouTube URL<br /><input className="wide" type="text" disabled={ro} value={url} onChange={ev => setUrl(ev.target.value)} /></label></p>
-        <p>
-          <label>Start <input size={6} placeholder="0:00" disabled={ro} value={start} onChange={ev => setStart(ev.target.value)} /></label>{' '}
-          <label>End <input size={6} placeholder="end" disabled={ro} value={end} onChange={ev => setEnd(ev.target.value)} /></label>
-        </p>
-        <p><small>Leave start or end blank to use the whole video.</small></p>
-      </>}
       {e.kind === 'read' && (
         <p><label>Text students read<br /><textarea rows={14} disabled={ro} value={text} onChange={ev => setText(ev.target.value)} /></label></p>
       )}
       {e.kind === 'listen' && <>
-        <p>Recording: <AudioField value={audio} onChange={setAudio} readOnly={ro} /></p>
+        <Field label="Recording" value={audioSummary(audio)} onClick={!ro || audio ? () => drawer.open(
+          <AudioDrawer title="Exercise recording" value={audio} onChange={setAudio} canDelete={false} readOnly={ro} />) : undefined} />
         <p><label>Text of the recording (optional)<br /><textarea rows={6} disabled={ro} value={sourceText} onChange={ev => setSourceText(ev.target.value)} /></label></p>
         <p><small>Shown to you while reviewing. Later: generate the recording from this text.</small></p>
       </>}
@@ -66,48 +58,38 @@ function MaterialForm({ e }: { e: Exercise }) {
 
 /* ---------- Question ---------- */
 
-const TARGETS = [0, 30, 45, 60, 90, 120];
+/** Target answer lengths, in minutes. */
+const TARGETS = [1, 2, 3, 4, 5];
 
-export function QuestionEditor({ exerciseId, questionId }: { exerciseId: string; questionId?: string }) {
-  const e = useDb().exercises.find(x => x.id === exerciseId);
-  const q = questionId ? e?.questions.find(x => x.id === questionId) : undefined;
-  if (!e || (questionId && !q)) return <NotFound />;
-  return <QuestionForm e={e} questionId={questionId} />;
-}
-
-function QuestionForm({ e, questionId }: { e: Exercise; questionId?: string }) {
+/** A question's detail page. Each row is set on its own and saved right away. */
+export function QuestionEditor({ exerciseId, questionId }: { exerciseId: string; questionId: string }) {
   const drawer = useDrawer();
-  const q = e.questions.find(x => x.id === questionId);
-  const ro = e.status !== 'draft';
-  const [text, setText] = useState(q?.promptText ?? '');
-  const [audio, setAudio] = useState(q?.promptAudio);
-  const [target, setTarget] = useState(q?.targetSeconds ?? 0);
-  const [error, setError] = useState('');
-
-  const ok = () => {
-    if (!text.trim() && !audio) return setError('Add prompt text, a recording, or both.');
-    saveQuestion(e.id, { id: questionId, promptText: text.trim(), promptAudio: audio, targetSeconds: target });
-    back();
-  };
-  const del: FooterButton[] = questionId ? [{
-    label: 'Delete',
-    onClick: () => drawer.open(<ConfirmDrawer title="Delete this question?" confirmLabel="Delete"
-      onConfirm={() => { back(); deleteQuestion(e.id, questionId); }} />),
-  }] : [];
+  const e = useDb().exercises.find(x => x.id === exerciseId);
+  const q = e?.questions.find(x => x.id === questionId);
+  if (!e || !q) return <NotFound />;
+  const draft = e.status === 'draft';
+  const edit = (fn: () => void) => (draft ? fn : undefined);
+  const update = (fn: (q: Question) => void) => updateQuestion(exerciseId, questionId, fn);
 
   return (
     <>
-      <p><small>{e.title}</small></p>
-      <p><label>Prompt text<br /><textarea rows={4} disabled={ro} value={text} onChange={ev => setText(ev.target.value)} /></label></p>
-      <p>Prompt audio: <AudioField value={audio} onChange={setAudio} readOnly={ro} /></p>
-      <p><label>Target answer length<br />
-        <select disabled={ro} value={target} onChange={ev => setTarget(Number(ev.target.value))}>
-          {TARGETS.map(v => <option key={v} value={v}>{v ? mmss(v) : 'No target'}</option>)}
-        </select>
-      </label></p>
-      <p><small>A goal, not a cutoff. Students see when they go over.</small></p>
-      {error && <p className="err">{error}</p>}
-      <Footer buttons={editorFooter(ro, ok, del)} />
+      <Field label="Prompt text" value={q.promptText || 'Missing'} onClick={edit(() => drawer.open(
+        <InputDrawer title="Prompt text" rows={4} initial={q.promptText ?? ''}
+          onDone={v => update(x => { x.promptText = v; })} />))} />
+      <Field label="Audio" value={audioSummary(q.promptAudio)}
+        onClick={draft || q.promptAudio ? () => drawer.open(
+          <AudioDrawer title={`Question ${e.questions.indexOf(q) + 1} audio`} value={q.promptAudio} readOnly={!draft}
+            onChange={v => update(x => { x.promptAudio = v; })} />) : undefined} />
+      <Field label="Target length" value={q.targetSeconds ? minutes(q.targetSeconds) : 'No limit'} onClick={edit(() => drawer.open(
+        <MenuDrawer<number | undefined> title="Target answer length"
+          note="A goal, not a cutoff. Students see when they go over."
+          options={[...TARGETS.map(m => ({ label: `${m} min`, value: m * 60 })), { label: 'No limit', value: undefined }]}
+          onPick={v => update(x => { x.targetSeconds = v; })} />))} />
+      {draft && <Footer buttons={[{
+        label: 'Delete question',
+        onClick: () => drawer.open(<ConfirmDrawer title="Delete this question?" confirmLabel="Delete"
+          onConfirm={() => { back(); deleteQuestion(exerciseId, questionId); }} />),
+      }]} />}
     </>
   );
 }

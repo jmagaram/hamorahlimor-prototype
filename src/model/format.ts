@@ -24,3 +24,18 @@ export function mmss(seconds: number | undefined): string {
   const s = Math.floor(seconds);
   return `${Math.floor(s / 60)}:${pad(s % 60)}`;
 }
+
+/** "2 min" for whole minutes, otherwise "1:30". */
+export const minutes = (seconds: number) => (seconds % 60 ? mmss(seconds) : `${seconds / 60} min`);
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "Tue 4-Nov". */
+export function dayLabel(date: DateString): string {
+  const [y, m, d] = date.split('-').map(Number);
+  return `${WEEKDAYS[new Date(y, m - 1, d).getDay()]} ${d}-${MONTHS[m - 1]}`;
+}
+
+/** "due Tue 4-Nov", or "" with no due date (for lines under a row). */
+export const dueText = (dueDate: DateString | undefined) => (dueDate ? `due ${dayLabel(dueDate)}` : '');

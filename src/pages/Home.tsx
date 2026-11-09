@@ -9,9 +9,9 @@ export function Home() {
   return (
     <>
       <Row label="Needs review" sub={`${needsReview} submitted, waiting for feedback`} onClick={() => go({ page: 'assignments' })} />
-      <Row label="Exercises" sub={`${db.exercises.length} exercises`} onClick={() => go({ page: 'exercises' })} />
-      <Row label="Students" sub={`${db.students.length} students`} onClick={() => go({ page: 'students' })} />
-      <Row label="Assignments" sub={`${db.assignments.length} assignments`} onClick={() => go({ page: 'assignments' })} />
+      <Row label="Exercises" onClick={() => go({ page: 'exercises' })} />
+      <Row label="Students" onClick={() => go({ page: 'students' })} />
+      <Row label="Assignments" onClick={() => go({ page: 'assignments' })} />
     </>
   );
 }

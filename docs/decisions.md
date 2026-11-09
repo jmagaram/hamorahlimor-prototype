@@ -2,6 +2,22 @@
 
 Why things are the way they are. Newest first. Each entry: the decision, why, and what we gave up.
 
+## One audio drawer for recording and playback (2026-11-09)
+
+**Decision.** Every recording is made and played in one drawer (`AudioDrawer`). It records with a red button and a large timer, then shows a player (slider, time, Back 15 / Play / Skip 15) with Record again and Delete. Changes save on Stop. A new take replaces the old one only when you stop it. Teacher recordings now store their length (`{ path, duration }`).
+
+**Why.** Inline Record/Play buttons scattered across pages were small and inconsistent, and gave no sense of length or position. One drawer gives a big, thumb-friendly recorder and a real player, and the same control works for prompts, Listen material, feedback comments, and (later) student answers. Keeping the old take until Stop means "Record again" can't lose a recording by accident.
+
+**Gave up.** Hearing a recording takes a tap to open the drawer. The red buttons and large timer are the one exception to "browser default styles".
+
+## A question is a detail page, saved as you go (2026-11-09)
+
+**Decision.** `Add question` creates an empty question in the draft and opens its page. The page has rows (Prompt text, Audio, Target length), each set in its own drawer and saved right away. There's no Cancel/OK for the page, only `Delete question`. Publishing checks that every question has prompt text or audio.
+
+**Why.** It matches Exercise detail, where each property is its own row and drawer, and one tap edits one thing. Keeping unsaved changes until OK would mean a detail page with an editor's footer, mixing two page types.
+
+**Gave up.** Backing out of a new question leaves it in the draft as "No prompt yet" (delete it, or publish will flag it). There's no Cancel that undoes several changes at once.
+
 ## Class is free text on Student, not an entity (2026-11-09)
 
 **Decision.** Removed the Class entity and the Classes pages. `Student.className` is optional free text. The class picker offers the classes already in use, "No class", and a new name. Students are listed grouped by class A–Z (then "No class"), names A–Z within each group.

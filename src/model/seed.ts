@@ -20,22 +20,22 @@ export function seed(): Db {
         questions: [
           { id: 'q1', promptText: 'What is the main problem the speaker describes?', targetSeconds: 60 },
           { id: 'q2', promptText: 'Why does the speaker think young people should care?', targetSeconds: 60 },
-          { id: 'q3', promptText: 'Do you agree with the speaker? Explain.', promptAudio: 'fake-audio/q3.webm', targetSeconds: 90 },
+          { id: 'q3', promptText: 'Do you agree with the speaker? Explain.', promptAudio: { path: 'fake-audio/q3.webm', duration: 9 }, targetSeconds: 120 },
         ],
       },
       {
         id: 'e2', title: 'My project', kind: 'speaking', status: 'published',
         allowRerecord: false, dateCreated: '2026-10-12', material: {},
         questions: [
-          { id: 'q4', promptText: 'What is your project about?', promptAudio: 'fake-audio/q4.webm', targetSeconds: 60 },
-          { id: 'q5', promptText: 'How did the project influence you?', targetSeconds: 90 },
+          { id: 'q4', promptText: 'What is your project about?', promptAudio: { path: 'fake-audio/q4.webm', duration: 6 }, targetSeconds: 60 },
+          { id: 'q5', promptText: 'How did the project influence you?', targetSeconds: 120 },
         ],
       },
       {
         id: 'e3', title: 'Weekend plans', kind: 'listen', status: 'draft',
         timeLimit: 10, allowRerecord: true, dateCreated: '2026-11-05',
-        material: { audio: 'fake-audio/e3.webm', sourceText: 'This weekend I am going to visit my grandmother in Beersheba...' },
-        questions: [{ id: 'q6', promptText: 'Where is the speaker going this weekend?', targetSeconds: 30 }],
+        material: { audio: { path: 'fake-audio/e3.webm', duration: 95 }, sourceText: 'This weekend I am going to visit my grandmother in Beersheba...' },
+        questions: [{ id: 'q6', promptText: 'Where is the speaker going this weekend?', targetSeconds: 60 }],
       },
       {
         id: 'e4', title: 'A letter from camp', kind: 'read', status: 'draft',
@@ -69,7 +69,7 @@ export function seed(): Db {
       {
         assignmentId: 'a3',
         overall: { text: 'Clear and well organized. Work on linking words.' },
-        answerComments: { q1: { text: 'Good summary.' }, q3: { audio: 'fake-audio/fb-a3-q3.webm' } },
+        answerComments: { q1: { text: 'Good summary.' }, q3: { audio: { path: 'fake-audio/fb-a3-q3.webm', duration: 22 } } },
         status: 'published', dateStarted: '2026-11-03T09:00:00Z', datePublished: '2026-11-03T09:20:00Z',
       },
       {

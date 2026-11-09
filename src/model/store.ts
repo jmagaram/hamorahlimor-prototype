@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { normalizeClass } from './derived';
 import { now, today } from './format';
 import { seed } from './seed';
-import type { AudioRef, Comment, Db, Exercise, ExerciseKind, FeedbackStatus, Question } from './types';
+import type { AudioClip, Comment, Db, Exercise, ExerciseKind, FeedbackStatus, Question } from './types';
 
 // In-memory store. Every change goes through mutate(), which works on a copy,
 // so React sees a new Db object each time.
@@ -27,8 +27,8 @@ function mutate(fn: (d: Db) => void) {
 let nextId = 100;
 const newId = (prefix: string) => `${prefix}${nextId++}`;
 let nextAudio = 1;
-/** A fake recording. */
-export const fakeAudio = (): AudioRef => `fake-audio/rec-${nextAudio++}.webm`;
+/** A fake recording of the given length in seconds. */
+export const fakeAudio = (duration: number): AudioClip => ({ path: `fake-audio/rec-${nextAudio++}.webm`, duration });
 
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 function newSecurityCode(d: Db): string {
@@ -143,15 +143,22 @@ export function duplicateExercises(ids: Iterable<string>): string[] {
 }
 
 /** Adds the question when it has no id yet. */
-export function saveQuestion(exerciseId: string, q: Omit<Question, 'id'> & { id?: string }) {
+/** Add an empty question to a draft and return its id. Its fields are then set one at a time. */
+export function addQuestion(exerciseId: string): string {
+  const id = newId('q');
+  updateDraft(exerciseId, e => { e.questions.push({ id }); });
+  return id;
+}
+
+/** Change one question of a draft. Blank text and a zero target are stored as absent. */
+export function updateQuestion(exerciseId: string, questionId: string, fn: (q: Question) => void) {
   updateDraft(exerciseId, e => {
-    const clean: Question = { id: q.id ?? newId('q') };
-    if (q.promptText) clean.promptText = q.promptText;
-    if (q.promptAudio) clean.promptAudio = q.promptAudio;
-    if (q.targetSeconds) clean.targetSeconds = q.targetSeconds;
-    const i = e.questions.findIndex(x => x.id === clean.id);
-    if (i >= 0) e.questions[i] = clean;
-    else e.questions.push(clean);
+    const q = e.questions.find(x => x.id === questionId);
+    if (!q) return;
+    fn(q);
+    if (!q.promptText?.trim()) delete q.promptText; else q.promptText = q.promptText.trim();
+    if (!q.promptAudio) delete q.promptAudio;
+    if (!q.targetSeconds) delete q.targetSeconds;
   });
 }
 
@@ -161,21 +168,21 @@ export function deleteQuestion(exerciseId: string, questionId: string) {
 
 /* ---------- assignments ---------- */
 
-export function assign(studentIds: Iterable<string>, exerciseId: string, dueDate: string) {
+export function assign(studentIds: Iterable<string>, exerciseId: string, dueDate: string | undefined) {
   mutate(d => {
     for (const studentId of studentIds) {
       if (d.assignments.some(a => a.studentId === studentId && a.exerciseId === exerciseId)) continue;
       d.assignments.push({
-        id: newId('a'), studentId, exerciseId, dateAssigned: today(), dueDate,
+        id: newId('a'), studentId, exerciseId, dateAssigned: today(), ...(dueDate && { dueDate }),
         state: 'notStarted', secondsTaken: 0,
       });
     }
   });
 }
 
-export function setDueDate(ids: Iterable<string>, dueDate: string) {
+export function setDueDate(ids: Iterable<string>, dueDate: string | undefined) {
   const set = new Set(ids);
-  mutate(d => { d.assignments.forEach(a => { if (set.has(a.id)) a.dueDate = dueDate; }); });
+  mutate(d => { d.assignments.forEach(a => { if (!set.has(a.id)) return; if (dueDate) a.dueDate = dueDate; else delete a.dueDate; }); });
 }
 
 /** Deletes the assignments with their answers and feedback. */

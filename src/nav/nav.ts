@@ -7,7 +7,7 @@ export type Route =
   | { page: 'exercises' }
   | { page: 'exercise'; id: string }
   | { page: 'material'; id: string }
-  | { page: 'question'; exerciseId: string; questionId?: string }
+  | { page: 'question'; exerciseId: string; questionId: string }
   | { page: 'assignToStudents'; exerciseId: string }
   | { page: 'assignToStudent'; studentId: string }
   | { page: 'assignments' }

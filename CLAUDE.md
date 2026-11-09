@@ -7,9 +7,9 @@ Two users: **teacher** and **student**. This phase builds a **click-through prot
 ## Current phase: click-through prototype
 
 - React + TypeScript, no backend. All data lives in memory, seeded with sample data, and resets on reload.
-- **Plain HTML elements with browser default styles.** No UI library, no design system, no colors or fonts beyond defaults. CSS only for layout: the sticky header, fixed footer, drawer, and list rows.
+- **Plain HTML elements with browser default styles.** No UI library, no design system, no colors or fonts beyond defaults. CSS only for layout (the sticky header, fixed footer, drawer, and list rows), plus the link rule below, the audio drawer's red record/stop buttons and large timer, and the bordered cards and video placeholder on locked pages.
 - Mobile-first: max width around 520px, centered on desktop.
-- Audio is faked. "Record" and "Play" buttons only toggle state; no microphone or real playback.
+- Audio is faked: no microphone or real playback. The record timer and playback position run on a clock, and a recording's length is however long you "recorded".
 - `prototype/teacher.html` is the first version, a single HTML file. Use it as a behavior reference: same pages, same flows, same sample data.
 - Keep the types in `src/model/types.ts` matching the **entities** in `docs/data-model.md` exactly (field names included), so they carry over to Firestore later. They follow the entity model, not the planned Firestore layout (no copied names, no subcollections).
 - `teacher.html` uses older, shorter field names (`code`, `due`, `q.text`, ...). The data model's names win.
@@ -52,8 +52,19 @@ Page types:
 
 - **List page**: rows, optionally grouped under headings. A **Select** footer button enters select mode: rows get checkboxes, a "Select all · N selected" bar appears, and the footer switches to `Cancel` + bulk actions with counts, e.g. `Delete (3)`. Leaving the page exits select mode.
 - **Detail page**: read-only rows (small label, value below, `›` when tappable). Tapping a row edits it, in a **drawer** for small edits or a **full editor page** for big ones.
+- **Locked page** (a published exercise): read-only and compact. Settings are plain text lines, not tappable rows; the material and each question are cards, and a card with media opens a play-only drawer (which also shows its text).
 - **Editor page**: a full-page form. Footer has `Cancel` and `OK`; both return to the previous page.
-- **Drawer**: slides up from the bottom over a dimmed background. It has a title, then a single input, an option list, or a confirmation message, then `Cancel` / `Done` (or a labeled action like `Delete`). Validation errors show inline in the drawer. Tapping an option in an option list applies it and closes the drawer immediately.
+- **Drawer**: slides up from the bottom over a dimmed background. It has a title, then a single input, an option list, or a confirmation message, then `Cancel` / `OK` (or a labeled action like `Delete`). Use `OK` whenever tapping it applies the change; use `Done` only where changes are saved automatically and the button just closes. Validation errors show inline in the drawer. Tapping an option in an option list applies it and closes the drawer immediately.
+- **Audio drawer** (`AudioDrawer`): every recording is set or played in it; the caller gives the title ("Question 2 audio"). With no recording: "Tap to record" and a red ● button; while recording, a large timer and a red ■ to stop (the background tap doesn't close it). Then a player: scrub slider, `0:02 / 2:42`, `⏪ 15` · `▶`/`⏸` · `15 ⏩` (media icons, each with an `aria-label`), and the drawer's buttons `Delete` · `Record again` · `Done` (Delete and Record again are confirmed in the drawer; read-only shows only `Done`). Changes save on Stop, so it closes with `Done`. Rows show a recording as "Recorded · 1:16".
+- **Menu drawer** (`MenuDrawer`): a list of choices for setting a value. Each choice is a label, optionally with a short caption under it. One tap applies and closes; no Cancel button and no current-value marker (tap the dimmed background to dismiss).
+
+Style:
+
+- **Labels**: plain words on buttons and links, no symbols like `+` (`Add question`, not `+ Add question`). Exception: standard media icons on the audio player's controls (▶ ⏸ ⏪ ⏩) and the record/stop buttons.
+- **Dates**: show calendar days with the weekday, `Tue 4-Nov` (`dayLabel`), not `2026-11-04`.
+- **Counts**: don't show counts ("Draft (2)", "5 students") unless asked for. Lists are short and the teacher can see them. Bulk-action buttons in select mode keep theirs (`Delete (3)`).
+- **Help text**: explanations about a setting go inside that setting's drawer (under its title), not on the page among the rows.
+- **Links**: a link on its own, not inside a sentence (`Add question`, header crumbs), has no underline: use `ActionLink`. A link inside a sentence keeps the browser's underline.
 
 Navigation:
 

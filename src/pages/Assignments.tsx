@@ -1,10 +1,11 @@
 import { answerFor, displayStatus, feedbackFor, groupedOrder, hasComment, timeTaken } from '../model/derived';
-import { addDays, formatTimestamp, mmss, today } from '../model/format';
+import { dayLabel, dueText, formatTimestamp, minutes, mmss } from '../model/format';
 import { setDueDate, unassign, useDb } from '../model/store';
 import type { Answer, Question } from '../model/types';
 import { back, go } from '../nav/nav';
 import { PlayButton } from '../ui/audio';
-import { ConfirmDrawer, InputDrawer } from '../ui/Drawer';
+import { ConfirmDrawer } from '../ui/Drawer';
+import { DueDateDrawer } from '../ui/DueDateDrawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer, type FooterButton } from '../ui/Footer';
 import { GroupedAssignments } from '../ui/GroupedAssignments';
@@ -12,11 +13,6 @@ import { Field } from '../ui/rows';
 import { SelectAllBar } from '../ui/selection';
 import { useSelection } from '../ui/useSelection';
 import { NotFound } from './NotFound';
-
-const dueDateDrawer = (initial: string, apply: (v: string) => void) => (
-  <InputDrawer title="Due date" type="date" initial={initial}
-    onDone={v => { if (!v) return 'Choose a date.'; apply(v); }} />
-);
 
 export function Assignments() {
   const db = useDb();
@@ -29,12 +25,12 @@ export function Assignments() {
       <SelectAllBar sel={sel} ids={groupedOrder(db, db.assignments)} />
       <GroupedAssignments assignments={db.assignments} sel={sel}
         label={a => `${student(a.studentId)?.name} · ${exercise(a.exerciseId)?.title}`}
-        sub={a => [student(a.studentId)?.className, `due ${a.dueDate}`].filter(Boolean).join(' · ')} />
+        sub={a => [student(a.studentId)?.className, dueText(a.dueDate)].filter(Boolean).join(' · ')} />
       <Footer buttons={sel.selecting ? [
         { label: 'Cancel', onClick: sel.cancel },
         {
           label: `Due date (${sel.count})`, disabled: !sel.count,
-          onClick: () => drawer.open(dueDateDrawer(addDays(today(), 7), v => { setDueDate(sel.selected, v); sel.cancel(); })),
+          onClick: () => drawer.open(<DueDateDrawer onPick={v => { setDueDate(sel.selected, v); sel.cancel(); }} />),
         },
         {
           label: `Unassign (${sel.count})`, disabled: !sel.count,
@@ -46,11 +42,11 @@ export function Assignments() {
   );
 }
 
-/** "▶ Play 1:12 / target 1:00 (over)", or "No answer yet". */
-export function AnswerLine({ answer, question, none = 'No answer yet' }: { answer?: Answer; question: Question; none?: string }) {
+/** "Play 1:12 / target 1:00 (over)", or "No answer yet". `n` is the question number, for the player's title. */
+export function AnswerLine({ answer, question, n, none = 'No answer yet' }: { answer?: Answer; question: Question; n: number; none?: string }) {
   if (!answer) return <small>{none}</small>;
   const t = question.targetSeconds;
-  return <><PlayButton /> {mmss(answer.duration)}{t ? ` / target ${mmss(t)}${answer.duration > t ? ' (over)' : ''}` : ''}</>;
+  return <><PlayButton title={`Answer to question ${n}`} clip={{ path: answer.recording, duration: answer.duration }} /> {mmss(answer.duration)}{t ? ` / target ${minutes(t)}${answer.duration > t ? ' (over)' : ''}` : ''}</>;
 }
 
 export function Assignment({ id }: { id: string }) {
@@ -79,7 +75,7 @@ export function Assignment({ id }: { id: string }) {
       <Field label="Student" value={s.className ? `${s.name} (${s.className})` : s.name} onClick={() => go({ page: 'student', id: s.id })} />
       <Field label="Exercise" value={e.title} onClick={() => go({ page: 'exercise', id: e.id })} />
       <Field label="Status" value={displayStatus(db, a)} />
-      <Field label="Due" value={a.dueDate} onClick={() => drawer.open(dueDateDrawer(a.dueDate, v => setDueDate([id], v)))} />
+      <Field label="Due" value={a.dueDate ? dayLabel(a.dueDate) : 'No due date'} onClick={() => drawer.open(<DueDateDrawer onPick={v => setDueDate([id], v)} />)} />
       <Field label="Assigned" value={a.dateAssigned} />
       <Field label="Started" value={formatTimestamp(a.dateStarted)} />
       <Field label="Time taken" value={mmss(timeTaken(a)) + (e.timeLimit ? ` of ${e.timeLimit}:00` : '')} />
@@ -92,7 +88,7 @@ export function Assignment({ id }: { id: string }) {
           <div key={q.id} className="row">
             <small>Q{i + 1}</small> {q.promptText || '(audio prompt)'}
             <br />
-            <AnswerLine answer={answerFor(db, id, q.id)} question={q} />
+            <AnswerLine answer={answerFor(db, id, q.id)} question={q} n={i + 1} />
             {hasComment(c) && <><br /><small>Your comment: {c.text}{c.audio && ' [audio]'}</small></>}
           </div>
         );

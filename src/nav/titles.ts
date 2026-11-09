@@ -15,7 +15,6 @@ export function routeTitle(db: Db, r: Route): string {
     case 'question': {
       const e = db.exercises.find(x => x.id === r.exerciseId);
       if (!e) return NOT_FOUND;
-      if (!r.questionId) return `Question ${e.questions.length + 1}`;
       const i = e.questions.findIndex(q => q.id === r.questionId);
       return i < 0 ? NOT_FOUND : `Question ${i + 1}`;
     }
@@ -40,7 +39,6 @@ export function routeHeading(db: Db, r: Route): string {
   switch (r.page) {
     case 'home': return 'English practice';
     case 'material': return 'Edit material';
-    case 'question': return r.questionId ? `Edit ${title.toLowerCase()}` : 'New question';
     case 'assignToStudents': return `Assign ${db.exercises.find(e => e.id === r.exerciseId)?.title}`;
     case 'assignToStudent': return `Assign to ${db.students.find(s => s.id === r.studentId)?.name}`;
     case 'review': {

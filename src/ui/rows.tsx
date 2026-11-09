@@ -29,9 +29,9 @@ export function Field({ label, value, onClick }: { label: string; value: ReactNo
   );
 }
 
-/** A link that runs an action. */
+/** A link that runs an action, standing on its own (not inside a sentence), so it has no underline. */
 export function ActionLink({ onClick, children }: { onClick: () => void; children: ReactNode }) {
-  return <a href="#" onClick={e => { e.preventDefault(); onClick(); }}>{children}</a>;
+  return <a href="#" className="standalone" onClick={e => { e.preventDefault(); onClick(); }}>{children}</a>;
 }
 
 export function Empty({ children }: { children: ReactNode }) {
