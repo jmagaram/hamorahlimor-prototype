@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { KINDS, studentGroups } from '../model/derived';
-import { dayLabel } from '../model/format';
+import { friendlyDay } from '../model/format';
 import { assign, useDb } from '../model/store';
 import { back } from '../nav/nav';
 import { DueDateDrawer } from '../ui/DueDateDrawer';
 import { useDrawer } from '../ui/drawerContext';
+import { Badge } from '../ui/Badge';
 import { Footer } from '../ui/Footer';
 import { Field } from '../ui/rows';
 import { NotFound } from './NotFound';
@@ -12,7 +13,7 @@ import { NotFound } from './NotFound';
 /** The due date for the new assignments: a row that opens the due date menu. */
 function DueDate({ value, onChange }: { value: string | undefined; onChange: (v: string | undefined) => void }) {
   const drawer = useDrawer();
-  return <Field label="Due date" value={value ? dayLabel(value) : 'No due date'}
+  return <Field label="Due date" value={value ? friendlyDay(value) : 'No due date'}
     onClick={() => drawer.open(<DueDateDrawer onPick={onChange} />)} />;
 }
 
@@ -55,7 +56,7 @@ export function AssignToStudents({ exerciseId }: { exerciseId: string }) {
               <label key={s.id} className="row">
                 <input type="checkbox" disabled={already.has(s.id)} checked={picked.has(s.id)}
                   onChange={ev => toggle([s.id], ev.target.checked)} /> {s.name}
-                {already.has(s.id) && <small> (already assigned)</small>}
+                {already.has(s.id) && <> <Badge>Already assigned</Badge></>}
               </label>
             ))}
           </section>
@@ -92,8 +93,8 @@ export function AssignToStudent({ studentId }: { studentId: string }) {
       {published.length ? published.map(e => (
         <label key={e.id} className="row">
           <input type="radio" name="exercise" disabled={already.has(e.id)} checked={exerciseId === e.id}
-            onChange={() => setExerciseId(e.id)} /> {e.title}
-          <br /><small>{KINDS[e.kind].label}{already.has(e.id) && ' · already assigned'}</small>
+            onChange={() => setExerciseId(e.id)} /> {e.title}{already.has(e.id) && <> <Badge>Already assigned</Badge></>}
+          <br /><small>{KINDS[e.kind].label}</small>
         </label>
       )) : <p>No published exercises.</p>}
       {error && <p className="err">{error}</p>}

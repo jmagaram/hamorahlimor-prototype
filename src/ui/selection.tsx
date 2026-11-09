@@ -16,7 +16,7 @@ export function SelectAllBar({ sel, ids }: { sel: Selection; ids: string[] }) {
 
 /** A row that becomes a checkbox in select mode. */
 export function SelectableRow({ sel, id, label, sub, onClick }: {
-  sel?: Selection; id: string; label: ReactNode; sub?: ReactNode; onClick: () => void;
+  sel?: Selection; id: string; label: ReactNode; sub?: ReactNode; onClick?: () => void;
 }) {
   if (!sel?.selecting) return <Row label={label} sub={sub} onClick={onClick} />;
   return (

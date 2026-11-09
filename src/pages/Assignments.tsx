@@ -1,15 +1,15 @@
-import { answerFor, displayStatus, feedbackFor, groupedOrder, hasComment, timeTaken } from '../model/derived';
-import { dayLabel, dueText, formatTimestamp, minutes, mmss } from '../model/format';
+import { answerFor, feedbackFor, groupedOrder, hasComment, timeTaken } from '../model/derived';
+import { dueText, friendlyDay, formatTimestamp, minutes, mmss } from '../model/format';
 import { setDueDate, unassign, useDb } from '../model/store';
 import type { Answer, Question } from '../model/types';
-import { back, go } from '../nav/nav';
+import { back, go, linkTo } from '../nav/nav';
 import { PlayButton } from '../ui/audio';
 import { ConfirmDrawer } from '../ui/Drawer';
 import { DueDateDrawer } from '../ui/DueDateDrawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer, type FooterButton } from '../ui/Footer';
 import { GroupedAssignments } from '../ui/GroupedAssignments';
-import { Field } from '../ui/rows';
+import { Facts, Field } from '../ui/rows';
 import { SelectAllBar } from '../ui/selection';
 import { useSelection } from '../ui/useSelection';
 import { NotFound } from './NotFound';
@@ -72,14 +72,15 @@ export function Assignment({ id }: { id: string }) {
 
   return (
     <>
-      <Field label="Student" value={s.className ? `${s.name} (${s.className})` : s.name} onClick={() => go({ page: 'student', id: s.id })} />
-      <Field label="Exercise" value={e.title} onClick={() => go({ page: 'exercise', id: e.id })} />
-      <Field label="Status" value={displayStatus(db, a)} />
-      <Field label="Due" value={a.dueDate ? dayLabel(a.dueDate) : 'No due date'} onClick={() => drawer.open(<DueDateDrawer onPick={v => setDueDate([id], v)} />)} />
-      <Field label="Assigned" value={a.dateAssigned} />
-      <Field label="Started" value={formatTimestamp(a.dateStarted)} />
-      <Field label="Time taken" value={mmss(timeTaken(a)) + (e.timeLimit ? ` of ${e.timeLimit}:00` : '')} />
-      <Field label="Submitted" value={formatTimestamp(a.dateSubmitted)} />
+      <Field label="Student" value={s.className ? `${s.name} (${s.className})` : s.name} onClick={linkTo({ page: 'student', id: s.id })} />
+      <Field label="Exercise" value={e.title} onClick={linkTo({ page: 'exercise', id: e.id })} />
+      <Field label="Due" value={a.dueDate ? friendlyDay(a.dueDate) : 'No due date'} onClick={() => drawer.open(<DueDateDrawer onPick={v => setDueDate([id], v)} />)} />
+      <Facts items={[
+        ['Assigned', friendlyDay(a.dateAssigned)],
+        ['Started', a.dateStarted && friendlyDay(formatTimestamp(a.dateStarted))],
+        ['Time taken', a.dateStarted && mmss(timeTaken(a)) + (e.timeLimit ? ` of ${e.timeLimit}:00` : '')],
+        ['Submitted', a.dateSubmitted && friendlyDay(formatTimestamp(a.dateSubmitted))],
+      ]} />
 
       <h3>Answers</h3>
       {e.questions.map((q, i) => {
@@ -97,7 +98,7 @@ export function Assignment({ id }: { id: string }) {
       <h3>Feedback</h3>
       {f ? (
         <p>
-          {f.status === 'published' ? `Published ${formatTimestamp(f.datePublished)}` : 'Draft (student cannot see it)'}
+          {f.status === 'published' ? `Published ${f.datePublished ? friendlyDay(formatTimestamp(f.datePublished)) : ''}` : 'Draft (student cannot see it)'}
           {hasComment(f.overall) && <><br /><small>Overall: {f.overall.text}{f.overall.audio && ' [audio]'}</small></>}
         </p>
       ) : <p><small>Not started.</small></p>}

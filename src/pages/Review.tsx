@@ -50,9 +50,6 @@ function ReviewForm({ db, id, initial }: { db: Db; id: string; initial?: Feedbac
         <b>{s?.name}</b> · {e.title}<br />
         <small>Feedback: {initial ? initial.status : 'not started'}. The student sees nothing until you publish.</small>
       </p>
-      {e.kind === 'listen' && e.material.sourceText && (
-        <details><summary>Recording text</summary><p>{e.material.sourceText}</p></details>
-      )}
       {e.questions.map((q, i) => (
         <section key={q.id}>
           <hr />

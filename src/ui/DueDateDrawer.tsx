@@ -1,5 +1,5 @@
 import { useState, type MouseEvent } from 'react';
-import { addDays, dayLabel, today } from '../model/format';
+import { addDays, friendlyDay, today } from '../model/format';
 import type { DateString } from '../model/types';
 import { DrawerShell } from './Drawer';
 import { useDrawer } from './drawerContext';
@@ -18,7 +18,7 @@ export function DueDateDrawer({ title = 'Due date', onPick }: {
   const t = today();
   const days = [0, 1, 2, 3, 4].map(n => {
     const d = addDays(t, n);
-    return { d, label: n === 0 ? `Today, ${dayLabel(d)}` : n === 1 ? `Tomorrow, ${dayLabel(d)}` : dayLabel(d) };
+    return { d, label: friendlyDay(d) };
   });
   // Open the browser's calendar on the hidden date input next to the menu.
   const other = (ev: MouseEvent) => {

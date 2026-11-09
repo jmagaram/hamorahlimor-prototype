@@ -42,6 +42,12 @@ function subscribe(fn: () => void) {
 export const getStack = () => stack;
 export const useStack = () => useSyncExternalStore(subscribe, getStack);
 
+/** Whether the route is already in the trail. Links to such a page show as plain text: Back and the crumbs return to it. */
+export const inTrail = (route: Route) => stack.some(s => s.key === routeKey(route));
+
+/** A link's tap handler: go to the route, or undefined when it's already in the trail. */
+export const linkTo = (route: Route): (() => void) | undefined => (inTrail(route) ? undefined : () => go(route));
+
 /** Push the route, or cut the stack back to it if it's already in the trail. */
 export function go(route: Route) {
   const e = entry(route);

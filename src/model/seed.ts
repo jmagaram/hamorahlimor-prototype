@@ -34,7 +34,7 @@ export function seed(): Db {
       {
         id: 'e3', title: 'Weekend plans', kind: 'listen', status: 'draft',
         timeLimit: 10, allowRerecord: true, dateCreated: '2026-11-05',
-        material: { audio: { path: 'fake-audio/e3.webm', duration: 95 }, sourceText: 'This weekend I am going to visit my grandmother in Beersheba...' },
+        material: { audio: { path: 'fake-audio/e3.webm', duration: 95 } },
         questions: [{ id: 'q6', promptText: 'Where is the speaker going this weekend?', targetSeconds: 60 }],
       },
       {

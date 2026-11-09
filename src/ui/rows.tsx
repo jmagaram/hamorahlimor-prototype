@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import { Fragment, type KeyboardEvent, type ReactNode } from 'react';
 
 function clickable(onClick?: () => void) {
   return onClick
@@ -36,4 +36,18 @@ export function ActionLink({ onClick, children }: { onClick: () => void; childre
 
 export function Empty({ children }: { children: ReactNode }) {
   return <p><small>{children}</small></p>;
+}
+
+/**
+ * Read-only facts as a compact two-column list ("Assigned   Today, Mon 9-Nov").
+ * Facts with no value are left out, so only what has happened shows.
+ */
+export function Facts({ items }: { items: [label: string, value: ReactNode][] }) {
+  const shown = items.filter(([, v]) => v !== undefined && v !== null && v !== false && v !== '');
+  if (!shown.length) return null;
+  return (
+    <dl className="facts">
+      {shown.map(([k, v]) => <Fragment key={k}><dt>{k}</dt><dd>{v}</dd></Fragment>)}
+    </dl>
+  );
 }

@@ -23,24 +23,27 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         <>
           <div id="bg" onClick={locked ? undefined : close} />
           {/* key: each open starts with fresh state */}
-          <div id="drawer" key={shown.n}>{shown.node}</div>
+          <div id="drawer" key={shown.n}>
+            {/* Grab handle: the usual sign that a sheet can be dismissed (tap outside). */}
+            {!locked && <div className="grabber" aria-hidden />}
+            {shown.node}
+          </div>
         </>
       )}
     </DrawerContext.Provider>
   );
 }
 
-/** Title, content, inline error, then the action buttons (none when `actions` is false). */
+/** Title, content, inline error, then the action buttons. With no actions, there is no button bar: tap outside to close. */
 export function DrawerShell({ title, error, actions, children }: {
   title: ReactNode; error?: string; actions?: ReactNode | false; children?: ReactNode;
 }) {
-  const { close } = useDrawer();
   return (
     <>
       <h3>{title}</h3>
       {children}
       {error && <p className="err">{error}</p>}
-      {actions !== false && <div className="bar">{actions ?? <button onClick={close}>Close</button>}</div>}
+      {actions && <div className="bar">{actions}</div>}
     </>
   );
 }

@@ -81,9 +81,9 @@ export function AudioDrawer({ title, value, onChange, canDelete = true, readOnly
   }
 
   return (
-    <DrawerShell title={title} actions={<>
-      {!readOnly && clip && canDelete && <button onClick={() => setMode('confirmDelete')}>Delete</button>}
-      {!readOnly && clip && <button onClick={() => setMode('confirmReplace')}>Record again</button>}
+    <DrawerShell title={title} actions={!readOnly && <>
+      {clip && canDelete && <button onClick={() => setMode('confirmDelete')}>Delete</button>}
+      {clip && <button onClick={() => setMode('confirmReplace')}>Record again</button>}
       <button onClick={close}>Done</button>
     </>}>
       {children}

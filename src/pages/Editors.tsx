@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { audioSummary, KINDS } from '../model/derived';
+import { audioSummary } from '../model/derived';
 import { minutes } from '../model/format';
 import { deleteQuestion, updateDraft, updateQuestion, useDb } from '../model/store';
-import type { AudioClip, Exercise, Question } from '../model/types';
+import type { Exercise, Question } from '../model/types';
 import { back } from '../nav/nav';
 import { AudioDrawer } from '../ui/audio';
 import { ConfirmDrawer, InputDrawer, MenuDrawer } from '../ui/Drawer';
@@ -22,35 +22,19 @@ export function Material({ id }: { id: string }) {
   return <MaterialForm e={e} />;
 }
 
-/** Read and listen material. Video is edited on Exercise detail (URL and clip drawers). */
+/** The text students read (Read and respond). Long, so it gets a full page. Listen and video are edited on Exercise detail. */
 function MaterialForm({ e }: { e: Exercise }) {
-  const drawer = useDrawer();
   const ro = e.status !== 'draft';
-  // Form state starts from the saved material and is written back only on OK.
+  // Form state starts from the saved text and is written back only on OK.
   const [text, setText] = useState(e.kind === 'read' ? e.material.text : '');
-  const [audio, setAudio] = useState<AudioClip | undefined>(e.kind === 'listen' ? e.material.audio : undefined);
-  const [sourceText, setSourceText] = useState(e.kind === 'listen' ? e.material.sourceText ?? '' : '');
-
   const ok = () => {
-    updateDraft(e.id, x => {
-      if (x.kind === 'read') x.material = { text };
-      if (x.kind === 'listen') x.material = { ...(audio && { audio }), ...(sourceText.trim() && { sourceText }) };
-    });
+    updateDraft(e.id, x => { if (x.kind === 'read') x.material = { text }; });
     back();
   };
-
   return (
     <>
-      <p><small>{e.title} · {KINDS[e.kind].label}</small></p>
-      {e.kind === 'read' && (
-        <p><label>Text students read<br /><textarea rows={14} disabled={ro} value={text} onChange={ev => setText(ev.target.value)} /></label></p>
-      )}
-      {e.kind === 'listen' && <>
-        <Field label="Recording" value={audioSummary(audio)} onClick={!ro || audio ? () => drawer.open(
-          <AudioDrawer title="Exercise recording" value={audio} onChange={setAudio} canDelete={false} readOnly={ro} />) : undefined} />
-        <p><label>Text of the recording (optional)<br /><textarea rows={6} disabled={ro} value={sourceText} onChange={ev => setSourceText(ev.target.value)} /></label></p>
-        <p><small>Shown to you while reviewing. Later: generate the recording from this text.</small></p>
-      </>}
+      <textarea rows={16} disabled={ro} value={text} autoFocus={!ro} aria-label="Text students read"
+        onChange={ev => setText(ev.target.value)} />
       <Footer buttons={editorFooter(ro, ok)} />
     </>
   );

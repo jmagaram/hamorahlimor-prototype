@@ -1,3 +1,5 @@
+import { displayStatus, EXERCISE_STATUS_COLOR, isOverdue, KINDS, STATUS_COLOR, type BadgeColor } from '../model/derived';
+import { today } from '../model/format';
 import type { Db } from '../model/types';
 import type { Route } from './nav';
 
@@ -11,7 +13,7 @@ export function routeTitle(db: Db, r: Route): string {
     case 'student': return db.students.find(s => s.id === r.id)?.name ?? NOT_FOUND;
     case 'exercises': return 'Exercises';
     case 'exercise': return db.exercises.find(e => e.id === r.id)?.title ?? NOT_FOUND;
-    case 'material': return 'Material';
+    case 'material': return 'Text to read';
     case 'question': {
       const e = db.exercises.find(x => x.id === r.exerciseId);
       if (!e) return NOT_FOUND;
@@ -38,7 +40,6 @@ export function routeHeading(db: Db, r: Route): string {
   if (title === NOT_FOUND) return title;
   switch (r.page) {
     case 'home': return 'English practice';
-    case 'material': return 'Edit material';
     case 'assignToStudents': return `Assign ${db.exercises.find(e => e.id === r.exerciseId)?.title}`;
     case 'assignToStudent': return `Assign to ${db.students.find(s => s.id === r.studentId)?.name}`;
     case 'review': {
@@ -48,4 +49,33 @@ export function routeHeading(db: Db, r: Route): string {
     }
     default: return title;
   }
+}
+
+/** Extras around a page's heading: a small line above it, and a badge after it. */
+export interface HeadingExtras {
+  kicker?: string;
+  badges?: { label: string; color: BadgeColor }[];
+}
+
+export function routeHeadingExtras(db: Db, r: Route): HeadingExtras {
+  if (r.page === 'exercise') {
+    const e = db.exercises.find(x => x.id === r.id);
+    if (!e) return {};
+    return {
+      kicker: KINDS[e.kind].kicker,
+      badges: [{ label: e.status === 'draft' ? 'Draft' : 'Published', color: EXERCISE_STATUS_COLOR[e.status] }],
+    };
+  }
+  if (r.page === 'assignment' || r.page === 'review') {
+    const a = db.assignments.find(x => x.id === r.id);
+    if (!a) return {};
+    const status = displayStatus(db, a);
+    return {
+      badges: [
+        { label: status, color: STATUS_COLOR[status] },
+        ...(isOverdue(a, today()) ? [{ label: 'Overdue', color: 'red' as const }] : []),
+      ],
+    };
+  }
+  return {};
 }

@@ -1,11 +1,12 @@
 import { mmss } from './format';
 import type { Answer, Assignment, Comment, Db, Exercise, ExerciseKind, Feedback, Student } from './types';
 
-export const KINDS: Record<ExerciseKind, { label: string; description: string }> = {
-  video: { label: 'Video', description: 'Students watch a video clip, then answer out loud.' },
-  read: { label: 'Read and respond', description: 'Students read a text, then answer out loud.' },
-  listen: { label: 'Listen and respond', description: 'Students listen to your recording, then answer out loud.' },
-  speaking: { label: 'Speaking questions', description: 'Students just answer your questions out loud.' },
+/** `kicker` is the small line above an exercise's heading that says what kind it is. */
+export const KINDS: Record<ExerciseKind, { label: string; description: string; kicker: string }> = {
+  video: { label: 'Video', description: 'Students watch a video clip, then answer out loud.', kicker: 'Watch and answer' },
+  read: { label: 'Read and respond', description: 'Students read a text, then answer out loud.', kicker: 'Read and answer' },
+  listen: { label: 'Listen and respond', description: 'Students listen to your recording, then answer out loud.', kicker: 'Listen and answer' },
+  speaking: { label: 'Speaking questions', description: 'Students just answer your questions out loud.', kicker: 'Speaking questions' },
 };
 
 /** Display statuses, in the order lists group them. */
@@ -67,7 +68,7 @@ export function materialSummary(e: Exercise): string {
       return t ? t.slice(0, 60) + (t.length > 60 ? '…' : '') : 'Not set';
     }
     case 'listen':
-      return e.material.audio ? 'Recording' + (e.material.sourceText ? ' + text' : '') : 'Not recorded';
+      return e.material.audio ? 'Recording' : 'Not recorded';
     case 'speaking':
       return '';
   }
@@ -137,3 +138,22 @@ export function clipRange(m: { start?: string; end?: string }): string {
   if (m.end) return `the beginning to ${m.end}`;
   return 'all';
 }
+
+/** Named badge colors (CSS classes `.badge-<color>`). */
+export type BadgeColor = 'gray' | 'blue' | 'green' | 'amber' | 'red' | 'purple';
+
+/** The badge color for an assignment's display status: amber needs you, green is finished. */
+export const STATUS_COLOR: Record<DisplayStatus, BadgeColor> = {
+  'Needs review': 'amber',
+  'Feedback draft': 'purple',
+  'In progress': 'blue',
+  'Paused': 'gray',
+  'Not started': 'gray',
+  'Done': 'green',
+};
+
+/** The badge color for an exercise's status. */
+export const EXERCISE_STATUS_COLOR: Record<'draft' | 'published', BadgeColor> = { draft: 'gray', published: 'green' };
+
+/** Past its due date and not submitted. */
+export const isOverdue = (a: Assignment, todayDate: string) => !!a.dueDate && a.dueDate < todayDate && a.state !== 'submitted';
