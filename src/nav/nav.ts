@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { discardIfEmptyDraft, discardIfEmptyQuestion } from '../model/store';
 
 export type Route =
   | { page: 'home' }
@@ -12,7 +13,7 @@ export type Route =
   | { page: 'assignToStudent'; studentId: string }
   | { page: 'assignments' }
   | { page: 'assignment'; id: string }
-  | { page: 'review'; id: string };
+  | { page: 'answerFeedback'; assignmentId: string; questionId: string };
 
 export interface StackEntry {
   route: Route;
@@ -31,9 +32,16 @@ let stack: StackEntry[] = [entry({ page: 'home' })];
 const listeners = new Set<() => void>();
 
 function set(next: StackEntry[]) {
+  const left = stack.filter(s => !next.some(n => n.key === s.key));
   stack = next;
   listeners.forEach(l => l());
   window.scrollTo(0, 0);
+  // Pages you left upward (Back, Done, crumbs, Home): throw away an empty question or draft.
+  // Deepest first, so removing an empty question can leave its exercise empty too.
+  for (const s of left.reverse()) {
+    if (s.route.page === 'question') discardIfEmptyQuestion(s.route.exerciseId, s.route.questionId);
+    if (s.route.page === 'exercise') discardIfEmptyDraft(s.route.id);
+  }
 }
 function subscribe(fn: () => void) {
   listeners.add(fn);

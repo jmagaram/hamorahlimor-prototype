@@ -49,8 +49,8 @@ export function DrawerShell({ title, error, actions, children }: {
 }
 
 /** A single input (a text area when `rows` is set). onDone returns an error message to keep the drawer open. */
-export function InputDrawer({ title, initial, type = 'text', rows, onDone }: {
-  title: string; initial: string; type?: 'text' | 'date' | 'url'; rows?: number; onDone: (value: string) => string | void;
+export function InputDrawer({ title, note, initial, type = 'text', rows, onDone }: {
+  title: string; note?: string; initial: string; type?: 'text' | 'date' | 'url'; rows?: number; onDone: (value: string) => string | void;
 }) {
   const { close } = useDrawer();
   const [value, setValue] = useState(initial);
@@ -63,6 +63,7 @@ export function InputDrawer({ title, initial, type = 'text', rows, onDone }: {
   return (
     <DrawerShell title={title} error={error}
       actions={<><button onClick={close}>Cancel</button><button onClick={done}>OK</button></>}>
+      {note && <p><small>{note}</small></p>}
       {rows
         ? <textarea rows={rows} value={value} autoFocus onChange={e => setValue(e.target.value)} />
         : <input className="wide" type={type} value={value} autoFocus

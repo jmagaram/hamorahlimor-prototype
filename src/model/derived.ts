@@ -1,5 +1,5 @@
 import { mmss } from './format';
-import type { Answer, Assignment, Comment, Db, Exercise, ExerciseKind, Feedback, Student } from './types';
+import type { Answer, AnswerFeedback, Assignment, Db, Exercise, ExerciseKind, Feedback, Question, QuestionMode, Student } from './types';
 
 /** `kicker` is the small line above an exercise's heading that says what kind it is. */
 export const KINDS: Record<ExerciseKind, { label: string; description: string; kicker: string }> = {
@@ -39,7 +39,6 @@ export function timeTaken(a: Assignment, nowMs = Date.now()): number {
 
 export const isOpen = (a: Assignment) => a.state !== 'submitted';
 
-export const hasComment = (c: Comment | undefined): c is Comment => !!c && (!!c.text || !!c.audio);
 
 export function hasMaterial(e: Exercise): boolean {
   switch (e.kind) {
@@ -53,8 +52,10 @@ export function hasMaterial(e: Exercise): boolean {
 /** Why the exercise can't be published, or undefined if it can. */
 export function publishProblem(e: Exercise): string | undefined {
   if (!e.questions.length) return 'Add at least one question.';
-  const blank = e.questions.findIndex(q => !q.promptText && !q.promptAudio);
-  if (blank >= 0) return `Question ${blank + 1} needs prompt text or audio.`;
+  const noText = e.questions.findIndex(q => !q.promptText);
+  if (noText >= 0) return `Question ${noText + 1} needs its text.`;
+  const noAudio = hasQuestionAudio(e) ? e.questions.findIndex(q => !q.promptAudio) : -1;
+  if (noAudio >= 0) return `Question ${noAudio + 1} needs audio, because students hear the questions.`;
   if (hasMaterial(e)) return undefined;
   return { video: 'Add the video URL.', read: 'Add the text to read.', listen: 'Record the audio.', speaking: '' }[e.kind];
 }
@@ -157,3 +158,52 @@ export const EXERCISE_STATUS_COLOR: Record<'draft' | 'published', BadgeColor> = 
 
 /** Past its due date and not submitted. */
 export const isOverdue = (a: Assignment, todayDate: string) => !!a.dueDate && a.dueDate < todayDate && a.state !== 'submitted';
+
+/** The title a new exercise starts with, e.g. "Untitled video". */
+export const defaultTitle = (kind: ExerciseKind) =>
+  `Untitled ${{ video: 'video', read: 'read and respond', listen: 'listen and respond', speaking: 'speaking questions' }[kind]}`;
+
+/** A question with nothing in it: no prompt text, no audio, no target. */
+export const isEmptyQuestion = (q: Question) => !q.promptText && !q.promptAudio && !q.targetSeconds;
+
+/**
+ * A draft nobody has put anything into: default title, no material, no questions with content.
+ * Time limit and re-recording don't count. Empty drafts are deleted when you leave them, and
+ * deleting one needs no confirmation.
+ */
+export function isEmptyDraft(e: Exercise): boolean {
+  if (e.status !== 'draft' || e.title !== defaultTitle(e.kind)) return false;
+  const noMaterial =
+    e.kind === 'video' ? !e.material.url :
+    e.kind === 'read' ? !e.material.text :
+    e.kind === 'listen' ? !e.material.audio :
+    true;
+  return noMaterial && e.questions.every(isEmptyQuestion);
+}
+
+/** The heading of an exercise's material section; speaking exercises have none. */
+export const MATERIAL_HEADING: Record<Exclude<ExerciseKind, 'speaking'>, string> = {
+  video: 'Video to watch',
+  listen: 'Audio to listen to',
+  read: 'Text to read',
+};
+
+/** Whether students hear the questions, so each question has (and needs) audio. */
+export const hasQuestionAudio = (e: Exercise) => e.questionMode !== 'read';
+
+/** The choices for how students get each question, as labels and captions. */
+export const QUESTION_MODES: { value: QuestionMode; label: string; sub: string }[] = [
+  { value: 'read', label: 'Read it', sub: 'Students read each question.' },
+  { value: 'hear', label: 'Hear it', sub: 'Students only hear each question, for listening practice or like the exam. You still see the text when grading.' },
+  { value: 'readAndHear', label: 'Read and hear it', sub: 'Students read each question and can play it.' },
+];
+export const questionModeLabel = (m: QuestionMode) => QUESTION_MODES.find(x => x.value === m)!.label;
+
+/** One line about an answer's feedback: "Comments at 0:06, 0:13 · Overall comment", or "None yet". */
+export function answerFeedbackSummary(af: AnswerFeedback | undefined): string {
+  if (!af) return 'None yet';
+  const parts: string[] = [];
+  if (af.comments.length) parts.push(`${af.comments.length === 1 ? 'Comment' : 'Comments'} at ${af.comments.map(c => mmss(c.atSeconds)).join(', ')}`);
+  if (af.overall.text || af.overall.audio) parts.push('Overall comment');
+  return parts.join(' · ') || 'None yet';
+}

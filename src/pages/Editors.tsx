@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { audioSummary } from '../model/derived';
+import { audioSummary, hasQuestionAudio, isEmptyQuestion } from '../model/derived';
 import { minutes } from '../model/format';
 import { deleteQuestion, updateDraft, updateQuestion, useDb } from '../model/store';
 import type { Exercise, Question } from '../model/types';
@@ -57,13 +57,17 @@ export function QuestionEditor({ exerciseId, questionId }: { exerciseId: string;
 
   return (
     <>
-      <Field label="Prompt text" value={q.promptText || 'Missing'} onClick={edit(() => drawer.open(
-        <InputDrawer title="Prompt text" rows={4} initial={q.promptText ?? ''}
+      <Field label="Question text" value={q.promptText || 'Missing'} onClick={edit(() => drawer.open(
+        <InputDrawer title="Question text" rows={4} initial={q.promptText ?? ''}
+          note={e.questionMode === 'hear'
+            ? 'Required. Students only hear the audio, but you see this when grading.'
+            : 'Required. Students read it, and you see it when grading.'}
           onDone={v => update(x => { x.promptText = v; })} />))} />
-      <Field label="Audio" value={audioSummary(q.promptAudio)}
+      {/* Audio only when students hear the questions; then it's required. */}
+      {hasQuestionAudio(e) && <Field label="Audio" value={audioSummary(q.promptAudio, 'Not recorded yet (required)')}
         onClick={draft || q.promptAudio ? () => drawer.open(
           <AudioDrawer title={`Question ${e.questions.indexOf(q) + 1} audio`} value={q.promptAudio} readOnly={!draft}
-            onChange={v => update(x => { x.promptAudio = v; })} />) : undefined} />
+            onChange={v => update(x => { x.promptAudio = v; })} />) : undefined} />}
       <Field label="Target length" value={q.targetSeconds ? minutes(q.targetSeconds) : 'No limit'} onClick={edit(() => drawer.open(
         <MenuDrawer<number | undefined> title="Target answer length"
           note="A goal, not a cutoff. Students see when they go over."
@@ -71,8 +75,10 @@ export function QuestionEditor({ exerciseId, questionId }: { exerciseId: string;
           onPick={v => update(x => { x.targetSeconds = v; })} />))} />
       {draft && <Footer buttons={[{
         label: 'Delete question',
-        onClick: () => drawer.open(<ConfirmDrawer title="Delete this question?" confirmLabel="Delete"
-          onConfirm={() => { back(); deleteQuestion(exerciseId, questionId); }} />),
+        // An empty question goes without asking.
+        onClick: () => isEmptyQuestion(q) ? (back(), deleteQuestion(exerciseId, questionId)) : drawer.open(
+          <ConfirmDrawer title="Delete this question?" confirmLabel="Delete"
+            onConfirm={() => { back(); deleteQuestion(exerciseId, questionId); }} />),
       }]} />}
     </>
   );

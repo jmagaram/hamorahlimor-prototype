@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { audioSummary, clipRange, clipSummary, KINDS, materialSummary, publishProblem } from '../model/derived';
+import { audioSummary, clipRange, clipSummary, hasQuestionAudio, isEmptyDraft, MATERIAL_HEADING, QUESTION_MODES, questionModeLabel, KINDS, materialSummary, publishProblem } from '../model/derived';
 import { dueText, minutes, mmss } from '../model/format';
 import { addQuestion, createExercise, getDb, deleteExercise, duplicateExercises, publishExercise, updateDraft, useDb } from '../model/store';
-import type { Exercise as ExerciseT, ExerciseKind } from '../model/types';
+import type { Exercise as ExerciseT, ExerciseKind, QuestionMode } from '../model/types';
 import { back, go } from '../nav/nav';
 import { ConfirmDrawer, DrawerShell, InputDrawer, MenuDrawer, PickDrawer } from '../ui/Drawer';
 import { AudioDrawer } from '../ui/audio';
@@ -43,13 +43,6 @@ export function Exercises() {
 
 const TIME_LIMITS = [1, 2, 3, 4, 5, 10, 15];
 
-/** The heading of the material section on an exercise page; speaking exercises have none. */
-const MATERIAL_HEADING: Record<Exclude<ExerciseKind, 'speaking'>, string> = {
-  video: 'Video to watch',
-  listen: 'Audio to listen to',
-  read: 'Text to read',
-};
-
 export function Exercise({ id }: { id: string }) {
   const db = useDb();
   const drawer = useDrawer();
@@ -84,6 +77,10 @@ export function Exercise({ id }: { id: string }) {
           { label: 'Allowed', value: true, sub: 'Students can re-record an answer before submitting.' },
           { label: 'One take only', value: false, sub: 'Like the real exam.' },
         ]} onPick={v => updateDraft(id, x => { x.allowRerecord = v; })} />))} />
+      <Field label="Questions are" value={questionModeLabel(e.questionMode)} onClick={() => drawer.open(
+        <MenuDrawer<QuestionMode> title="How students get each question"
+          note="You always see the text when grading. When students hear the questions, every question needs audio."
+          options={QUESTION_MODES} onPick={v => updateDraft(id, x => { x.questionMode = v; })} />)} />
 
       {e.kind !== 'speaking' && <h3>{MATERIAL_HEADING[e.kind]}</h3>}
       {e.kind === 'video' && <>
@@ -105,15 +102,19 @@ export function Exercise({ id }: { id: string }) {
 
       <h3>Questions</h3>
       {e.questions.length ? e.questions.map((q, i) => (
-        <Row key={q.id} label={q.promptText || q.promptAudio ? `${i + 1}. ${q.promptText || '(audio only)'}` : <>{i + 1}. <Badge color="amber">No prompt yet</Badge></>}
-          sub={[q.promptAudio ? 'Audio prompt' : '', q.targetSeconds ? `Target ${minutes(q.targetSeconds)}` : ''].filter(Boolean).join(' · ')}
+        <Row key={q.id} label={q.promptText ? `${i + 1}. ${q.promptText}` : <>{i + 1}. <Badge color="amber">No text yet</Badge></>}
+          sub={[hasQuestionAudio(e) ? (q.promptAudio ? 'Audio recorded' : 'No audio yet') : '', q.targetSeconds ? `Target ${minutes(q.targetSeconds)}` : ''].filter(Boolean).join(' · ')}
           onClick={() => go({ page: 'question', exerciseId: id, questionId: q.id })} />
       )) : <Empty>No questions yet.</Empty>}
       <p><ActionLink onClick={() => go({ page: 'question', exerciseId: id, questionId: addQuestion(id) })}>Add question</ActionLink></p>
 
       <Footer buttons={[
-        { label: 'Delete', onClick: () => drawer.open(<ConfirmDrawer title="Delete this draft?" message="This cannot be undone."
-          confirmLabel="Delete" onConfirm={() => { back(); deleteExercise(id); }} />) },
+        {
+          // An empty draft goes without asking; leaving it would delete it anyway.
+          label: 'Delete', onClick: () => isEmptyDraft(e) ? (back(), deleteExercise(id)) : drawer.open(
+            <ConfirmDrawer title="Delete this draft?" message="This cannot be undone."
+              confirmLabel="Delete" onConfirm={() => { back(); deleteExercise(id); }} />),
+        },
         { label: 'Publish', onClick: publish },
         { label: 'Done', onClick: back },
       ]} />
@@ -131,6 +132,7 @@ function LockedExercise({ e }: { e: ExerciseT }) {
       <Facts items={[
         ['Time limit', e.timeLimit ? `${e.timeLimit} min` : 'No limit'],
         ['Re-recording', e.allowRerecord ? 'Allowed' : 'One take only'],
+        ['Questions are', questionModeLabel(e.questionMode)],
       ]} />
 
       {e.kind !== 'speaking' && <h3>{MATERIAL_HEADING[e.kind]}</h3>}
@@ -160,16 +162,17 @@ function LockedExercise({ e }: { e: ExerciseT }) {
 
       <h3>Questions</h3>
       {e.questions.map((q, i) => {
-        const open = q.promptAudio ? () => drawer.open(
-          <AudioDrawer title={`Question ${i + 1}`} value={q.promptAudio} readOnly>
+        const audio = hasQuestionAudio(e) ? q.promptAudio : undefined;
+        const open = audio ? () => drawer.open(
+          <AudioDrawer title={`Question ${i + 1}`} value={audio} readOnly>
             {q.promptText && <p>{q.promptText}</p>}
           </AudioDrawer>) : undefined;
         return (
           <div key={q.id} className="card" {...(open && { role: 'button', tabIndex: 0, onClick: open })}>
             <small>Question {i + 1}</small><br />
             {q.promptText}
-            {(q.promptAudio || q.targetSeconds) && <><br /><small>
-              {[q.promptAudio && `\u25B6\uFE0E Audio ${mmss(q.promptAudio.duration)}`, q.targetSeconds && `Target ${minutes(q.targetSeconds)}`].filter(Boolean).join(' · ')}
+            {(audio || q.targetSeconds) && <><br /><small>
+              {[audio && `\u25B6\uFE0E Audio ${mmss(audio.duration)}`, q.targetSeconds && `Target ${minutes(q.targetSeconds)}`].filter(Boolean).join(' · ')}
             </small></>}
           </div>
         );
