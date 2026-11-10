@@ -2,7 +2,7 @@
 
 A web app for an English teacher in Israel. Students practice spoken English (modeled on the oral bagrut / COBE): they watch, read, or listen to material, then record spoken answers to questions. The teacher creates exercises, assigns them, and reviews answers with comments.
 
-Two users: **teacher** and **student**. This phase builds a **click-through prototype** of both, signed in by code; the student side is newer and smaller.
+Two users: **teacher** and **student** (any number of teachers, one role: every teacher sees all students' work). This phase builds a **click-through prototype** of both, signed in by code; the student side is newer and smaller.
 
 ## Current phase: click-through prototype
 
@@ -19,6 +19,10 @@ Two users: **teacher** and **student**. This phase builds a **click-through prot
 - `docs/data-model.md`: entities, fields, relationships, rules, and the planned Firestore layout. **This is the source of truth.** If a UI change needs a model change, update this doc in the same change.
 
 - `docs/decisions.md`: important decisions and the reasoning behind them, so they can be revisited later. Add an entry when a choice was debated or isn't obvious from the code.
+
+- `docs/backlog.md`: ideas deliberately left for later. Add to it when something is parked; remove an item when it's built.
+
+- `docs/real-app.md`: what's decided for the real app (a separate repo).
 
 Docs hold only guidelines that apply to the prototype as a whole, plus decision reasoning. Don't describe individual pages, buttons, or wording in docs: the code under `src/pages/` is the spec for each page, so change it directly.
 
@@ -97,6 +101,5 @@ Navigation:
 
 ## Later phases (not now)
 
-- Student experience prototype.
-- Real app: Firebase (Firestore, Cloud Storage for audio, anonymous auth + student security codes).
-- Possibly text-to-speech to generate listen-and-respond recordings from text.
+- Real app, in a separate repo: see `docs/real-app.md`.
+- Possibly text-to-speech to generate listen-and-respond recordings from text (also in `docs/backlog.md`).

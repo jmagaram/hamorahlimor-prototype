@@ -37,7 +37,10 @@ export function SignIn() {
 
       {/* Prototype only: skip typing a code. */}
       <p className="prototype"><small>Prototype: sign in as{' '}
-        <ActionLink onClick={() => go(db.teacher.securityCode)}>Teacher</ActionLink>
+        <ActionLink onClick={() => drawer.open(
+          <MenuDrawer title="Sign in as a teacher"
+            options={db.teachers.map(t => ({ label: t.name, sub: t.securityCode, value: t.securityCode }))}
+            onPick={go} />)}>Teacher</ActionLink>
         {' · '}
         <ActionLink onClick={() => drawer.open(
           <MenuDrawer title="Sign in as a student"

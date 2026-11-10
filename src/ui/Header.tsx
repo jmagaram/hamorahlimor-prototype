@@ -18,9 +18,11 @@ export function Header() {
   const session = useSession();
   const drawer = useDrawer();
   if (!session) return null;
-  const student = session.role === 'student' ? db.students.find(s => s.id === session.studentId) : undefined;
-  const name = (student ? student.name : db.teacher.name).split(' ')[0];
-  const code = student ? student.securityCode : db.teacher.securityCode;
+  const me = session.role === 'student'
+    ? db.students.find(s => s.id === session.studentId)
+    : db.teachers.find(t => t.id === session.teacherId);
+  const name = me?.name.split(' ')[0] ?? '';
+  const code = me?.securityCode ?? '';
   const trail = stack;
   // While a student is working, leaving is Pause (or Submit), not Back.
   const top = stack[stack.length - 1].route;

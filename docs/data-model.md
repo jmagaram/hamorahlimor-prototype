@@ -11,6 +11,7 @@ erDiagram
   QUESTION ||--o{ ANSWER : "answered by"
   ASSIGNMENT ||--o| FEEDBACK : has
   TEACHER {
+    string id PK
     string name
     string securityCode
   }
@@ -74,9 +75,9 @@ Types: `date` is a calendar day (`YYYY-MM-DD`). `timestamp` is a point in time (
 ## Entities
 
 ### Teacher
-One for now (`Db.teacher`). Signs in with a code, like a student.
+Any number of teachers, all with the same single role. Every teacher sees all students, exercises and assignments, and can review and give feedback on any student's work; nothing is owned by a teacher. Signs in with a code, like a student.
 
-- `name`, `securityCode`
+- `id`, `name`, `securityCode` (same format and uniqueness as students' codes)
 
 ### Student
 - `id`, `name`, `className?`, `securityCode`, `dateCreated`

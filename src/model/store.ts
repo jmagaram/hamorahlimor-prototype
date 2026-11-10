@@ -32,11 +32,11 @@ export const fakeAudio = (duration: number): AudioClip => ({ path: `fake-audio/r
 
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const randomChars = (n: number) => Array.from({ length: n }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
-/** "AZ54-93GW": 8 characters without look-alikes (0/O, 1/I/L), unique among students and the teacher. */
+/** "AZ54-93GW": 8 characters without look-alikes (0/O, 1/I/L), unique among students and teachers. */
 function newSecurityCode(d: Db): string {
   for (;;) {
     const code = `${randomChars(4)}-${randomChars(4)}`;
-    if (!d.students.some(s => s.securityCode === code) && d.teacher.securityCode !== code) return code;
+    if (!d.students.some(s => s.securityCode === code) && !d.teachers.some(t => t.securityCode === code)) return code;
   }
 }
 
