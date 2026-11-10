@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { audioSummary, clipRange, clipSummary, hasQuestionAudio, isEmptyDraft, MATERIAL_HEADING, QUESTION_MODES, questionModeLabel, KINDS, materialSummary, publishProblem } from '../model/derived';
-import { minutes, mmss } from '../model/format';
+import { audioSummary, EXERCISE_SHOW, filterExercises, lastAssigned, type ExerciseShow, clipRange, clipSummary, hasQuestionAudio, isEmptyDraft, MATERIAL_HEADING, QUESTION_MODES, questionModeLabel, KINDS, materialSummary, publishProblem } from '../model/derived';
+import { daysAgo, minutes, mmss } from '../model/format';
 import { addQuestion, createExercise, getDb, deleteExercise, duplicateExercises, publishExercise, updateDraft, useDb } from '../model/store';
 import type { Exercise as ExerciseT, ExerciseKind, QuestionMode } from '../model/types';
 import { back, go } from '../nav/nav';
+import { usePageState } from '../nav/pageState';
 import { ConfirmDrawer, DrawerShell, InputDrawer, MenuDrawer, PickDrawer } from '../ui/Drawer';
 import { AudioDrawer } from '../ui/audio';
 import { Badge } from '../ui/Badge';
@@ -16,13 +17,18 @@ import { NotFound } from './NotFound';
 export function Exercises() {
   const db = useDb();
   const drawer = useDrawer();
+  const [search, setSearch] = usePageState('search', '');
+  const [show, setShow] = usePageState<ExerciseShow>('show', 'all');
+  const filtering = !!search.trim() || show !== 'all';
   const groups = (['draft', 'published'] as const).map(status => ({
-    status, label: status === 'draft' ? 'Draft' : 'Published', items: db.exercises.filter(e => e.status === status),
+    status, label: status === 'draft' ? 'Draft' : 'Published',
+    items: filterExercises(db, db.exercises.filter(e => e.status === status), search, show),
   }));
   const newExercise = () => drawer.open(<NewExerciseDrawer />);
   return (
     <>
-      {groups.map(g => (
+      <ExerciseFilters search={search} setSearch={setSearch} show={show} setShow={setShow} />
+      {groups.map(g => (filtering && !g.items.length ? null :
         <section key={g.status}>
           <h3>{g.label}</h3>
           {g.items.length
@@ -30,6 +36,7 @@ export function Exercises() {
             : <Empty>None</Empty>}
         </section>
       ))}
+      {filtering && groups.every(g => !g.items.length) && <Empty>No exercise matches.</Empty>}
       <Footer buttons={[{ label: 'New exercise', onClick: newExercise }]} />
     </>
   );
@@ -38,9 +45,29 @@ export function Exercises() {
 /** An exercise in a list (Exercises, Choose exercise). */
 export function ExerciseRow({ e, onClick }: { e: ExerciseT; onClick: () => void }) {
   const db = useDb();
-  const assigned = db.assignments.filter(a => a.exerciseId === e.id).length;
-  const sub = `${KINDS[e.kind].label} · ${e.questions.length} questions` + (e.status === 'published' ? ` · ${assigned} assigned` : '');
+  const last = lastAssigned(db, e.id);
+  // Kind and time limit always; other settings only when they're not the usual.
+  const sub = [
+    KINDS[e.kind].label,
+    e.timeLimit ? `${e.timeLimit} min` : 'No time limit',
+    !e.allowRerecord && 'One take only',
+    e.questionMode !== 'read' && `Questions: ${questionModeLabel(e.questionMode)}`,
+    e.status === 'published' && (last ? `Assigned ${daysAgo(last)}` : 'Not assigned yet'),
+  ].filter(Boolean).join(' · ');
   return <Row label={e.title} sub={sub} onClick={onClick} />;
+}
+
+/** Search (titles and question text) and a Show menu, for a list of exercises. */
+export function ExerciseFilters({ search, setSearch, show, setShow }: {
+  search: string; setSearch: (v: string) => void; show: ExerciseShow; setShow: (v: ExerciseShow) => void;
+}) {
+  const drawer = useDrawer();
+  return <>
+    <input className="wide" type="search" placeholder="Search titles and questions" aria-label="Search titles and questions"
+      value={search} onChange={ev => setSearch(ev.target.value)} />
+    <Field label="Show" value={EXERCISE_SHOW.find(x => x.value === show)!.label} onClick={() => drawer.open(
+      <MenuDrawer<ExerciseShow> title="Show" options={EXERCISE_SHOW} onPick={setShow} />)} />
+  </>;
 }
 
 /** Pick a kind, then open the new draft. */

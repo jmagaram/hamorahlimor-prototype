@@ -246,3 +246,25 @@ export function lastSubmitted(db: Db, studentId: string, exerciseId: string): As
     .filter(a => a.studentId === studentId && a.exerciseId === exerciseId && a.dateSubmitted)
     .sort((x, y) => (y.dateSubmitted ?? '').localeCompare(x.dateSubmitted ?? ''))[0];
 }
+
+/** Latest day the exercise was assigned to anyone, if ever. */
+export const lastAssigned = (db: Db, exerciseId: string): string | undefined =>
+  db.assignments.filter(a => a.exerciseId === exerciseId).map(a => a.dateAssigned).sort().pop();
+
+export type ExerciseShow = 'all' | 'notAssigned' | 'short';
+export const EXERCISE_SHOW: { value: ExerciseShow; label: string; sub?: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'notAssigned', label: 'Not assigned yet', sub: 'Exercises no student has had.' },
+  { value: 'short', label: 'Short', sub: 'A time limit of 5 minutes or less, e.g. to do in class.' },
+];
+
+/** Exercises matching a search (title or any question's text) and a Show choice, newest first. */
+export function filterExercises(db: Db, list: Exercise[], search: string, show: ExerciseShow): Exercise[] {
+  const q = search.trim().toLowerCase();
+  return list
+    .filter(e => !q || e.title.toLowerCase().includes(q) || e.questions.some(x => x.promptText?.toLowerCase().includes(q)))
+    .filter(e => show === 'all'
+      || (show === 'notAssigned' && !db.assignments.some(a => a.exerciseId === e.id))
+      || (show === 'short' && !!e.timeLimit && e.timeLimit <= 5))
+    .sort((a, b) => b.dateCreated.localeCompare(a.dateCreated));
+}
