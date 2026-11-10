@@ -20,8 +20,8 @@ export function routeTitle(db: Db, r: Route): string {
       const i = e.questions.findIndex(q => q.id === r.questionId);
       return i < 0 ? NOT_FOUND : `Question ${i + 1}`;
     }
-    case 'assignToStudents':
-    case 'assignToStudent': return 'Assign';
+    case 'assign': return 'Assign';
+    case 'chooseExercise': return 'Choose exercise';
     case 'assignments': return 'Assignments';
     case 'assignment': {
       const a = db.assignments.find(x => x.id === r.id);
@@ -44,8 +44,6 @@ export function routeHeading(db: Db, r: Route): string {
   if (title === NOT_FOUND) return title;
   switch (r.page) {
     case 'home': return 'English practice';
-    case 'assignToStudents': return `Assign ${db.exercises.find(e => e.id === r.exerciseId)?.title}`;
-    case 'assignToStudent': return `Assign to ${db.students.find(s => s.id === r.studentId)?.name}`;
     case 'answerFeedback': {
       const a = db.assignments.find(x => x.id === r.assignmentId);
       const name = db.students.find(s => s.id === a?.studentId)?.name.split(' ')[0];

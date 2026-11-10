@@ -44,7 +44,7 @@ Commands: `npm run dev`, `npm run build` (type-checks), `npm run lint`.
 Every page has the same frame:
 
 - **Header** (sticky): the trail *above* the current page. A line of small clickable crumbs for everything above the parent (e.g. `Home › Exercises ›`), then a Back button labeled with the parent (e.g. `‹ Climate change interview`). There is no separate Home button: the `Home` crumb (or `‹ Home`) goes home. No header on Home.
-- **Heading**: an `<h2>` at the top of the body says where you are and what you're doing. Each page chooses its own text: usually the page's title (`Aleph`), sometimes worded as a task (`Edit question 2`, `Assign Climate change interview`). The title (used in crumbs and Back) and the heading can differ; both live in `src/nav/titles.ts`.
+- **Heading**: an `<h2>` at the top of the body says where you are and what you're doing. Each page chooses its own text: usually the page's title (`Aleph`), sometimes worded as a task (`Edit question 2`, `Feedback on Maya's answer`). The title (used in crumbs and Back) and the heading can differ; both live in `src/nav/titles.ts`.
 - **Body**: the page content.
 - **Footer** (fixed, optional): buttons within thumb reach. Each button is sized to its label, and leftover width is shared between them (`flex: 1 1 auto`). Disabled when the action can't apply.
 
@@ -74,12 +74,16 @@ Style:
 Navigation:
 
 - Navigation is a **stack** that the header renders (crumbs, then Back for the parent).
+- **Tap opens, drawers are for small things.** Tapping a thing (a row, a card) always opens its page; actions on it (Edit, Assign, Duplicate, Delete) live on that page, mostly in the footer. No action-menu drawers on tap. Drawers are for setting a value, a small edit, a confirmation, or a quick look.
+- **Multi-step flows use picker pages.** When a step needs you to pick a thing, go to a pick-mode page for it (`Choose exercise`): one tap picks and goes back (`backWith`). Detours (e.g. creating a new exercise from the picker) just work through the stack.
+- **Page state**: what the user has done on a page (choices, half-filled fields) that must survive visiting a deeper page goes in `usePageState` (`src/nav/pageState.ts`), stored on the page's stack entry, not in `useState` (which resets on navigation) and not in route params (which say which page it is).
+- **One page per task, preset by where you came from.** E.g. Assign (Exercise + Students) is reached from Assignments (`New assignment`, nothing preset), an exercise (exercise preset), or a student (student ticked).
 - Links go in every direction: student → assignment → exercise → another student, and so on. Every assignment row anywhere opens Assignment detail; every student name opens Student detail; every exercise title opens Exercise detail.
 - If you navigate to a page that is already in the trail (same page and same params), cut the stack back to it instead of pushing a duplicate.
 - A link to a page that is already in the trail shows as plain text (no `›`, not tappable); Back and the crumbs return to it. Use `linkTo(route)` for a row's tap handler.
 - Leaving an **empty** draft or question upward (Back, Done, crumbs, Home) deletes it, and deleting an empty one needs no confirmation (`isEmptyDraft` / `isEmptyQuestion`; handled in `nav.ts` when an entry leaves the stack).
 - No browser alerts or confirms. Use a drawer.
-- Navigation is in memory only: the browser's back button and reload are not wired to it.
+- Navigation is in memory only: the browser's back button and reload are not wired to it. (The real app, installed as a home-screen web app, should mirror the stack into browser history with plain entries so Android's back button pops it; see decisions.)
 
 ## Later phases (not now)
 

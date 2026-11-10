@@ -85,3 +85,19 @@ Why things are the way they are. Newest first. Each entry: the decision, why, an
 **Gave up.** Simpler alternatives we considered: one text box and one recording per answer that the teacher adds to while listening, with an optional "[0:32]" inserted into the text. Timed comments cost a little more model and UI, but they're the shape the student screen needs.
 
 **The real app follows the spec, not the prototype.** The prototype page only shows the flow. Missing from it: one-tap record/stop on the page (no drawer), "Resume after each comment", a list that follows playback, replaying the same window again, the "No overall comment" nudge on Done, the waveform with comment dots, play buttons with progress rings in the rows, and the student screen.
+
+## Tap opens a page; multi-step flows use pickers (2026-11-10)
+
+**Decision.** Tapping a thing always opens its page, and actions on it live on that page. Drawers are only for setting a value, small edits, confirmations, and quick looks. When a task needs you to pick something, it goes to a pick-mode page where one tap picks and returns. Assigning is one Assign page (Exercise section + Students section) reached from Assignments, an exercise, or a student, with the matching part preset; it replaced two separate Assign pages.
+
+**Why.** We considered an action drawer on tap (Edit / Assign / Review…) to make multi-step flows lighter. But it makes every list a menu, adds a tap to the most common case (just open it), and makes taps unpredictable. The real difficulty was keeping a flow's choices while picking something, which page state solves. Assigning had only been possible from inside an exercise or a student; the Assignments list had no way to start one.
+
+**Gave up.** Picking takes a page visit, not a drawer. A long list with a filter box works better on a page anyway (the phone keyboard and a drawer fight).
+
+## Page state lives on the stack entry, not in URLs (2026-11-10)
+
+**Decision.** Each navigation stack entry carries a small state bag (`usePageState`) for what the user has done on that page. It lasts while the entry is in the stack and is dropped when you leave it upward. Route params only say which page it is. Nothing goes in the URL.
+
+**Why.** Pages reset their component state when you navigate, so a flow like Assign → Choose exercise → back lost the ticked students. Native apps keep pages underneath alive; this does the same. The app is installed on the home screen and nobody shares links to pages, so detailed URLs (or `?state=` keys into storage) would be plumbing with no benefit.
+
+**Later (real app).** If the phone kills the app, it reopens at Home and an unfinished flow is lost; the stack could be saved to storage if that matters. Android's system back button triggers browser "back" in an installed web app and would close it, so mirror the stack into browser history with plain entries (`#1`, `#2`, …) that carry no details, and pop our stack on the browser's back event.

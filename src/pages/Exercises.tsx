@@ -19,11 +19,7 @@ export function Exercises() {
   const groups = (['draft', 'published'] as const).map(status => ({
     status, label: status === 'draft' ? 'Draft' : 'Published', items: db.exercises.filter(e => e.status === status),
   }));
-  const newExercise = () => drawer.open(
-    <PickDrawer<ExerciseKind> title="New exercise" showCurrent={false}
-      options={(Object.keys(KINDS) as ExerciseKind[]).map(k => ({ label: KINDS[k].label, sub: KINDS[k].description, value: k }))}
-      onPick={k => go({ page: 'exercise', id: createExercise(k) })} />,
-  );
+  const newExercise = () => drawer.open(<NewExerciseDrawer />);
   return (
     <>
       {groups.map(g => (
@@ -38,6 +34,15 @@ export function Exercises() {
       ))}
       <Footer buttons={[{ label: 'New exercise', onClick: newExercise }]} />
     </>
+  );
+}
+
+/** Pick a kind, then open the new draft. */
+export function NewExerciseDrawer() {
+  return (
+    <PickDrawer<ExerciseKind> title="New exercise" showCurrent={false}
+      options={(Object.keys(KINDS) as ExerciseKind[]).map(k => ({ label: KINDS[k].label, sub: KINDS[k].description, value: k }))}
+      onPick={k => go({ page: 'exercise', id: createExercise(k) })} />
   );
 }
 
@@ -185,7 +190,7 @@ function LockedExercise({ e }: { e: ExerciseT }) {
 
       <Footer buttons={[
         { label: 'Duplicate', onClick: () => go({ page: 'exercise', id: duplicateExercises([e.id])[0] }) },
-        { label: 'Assign', onClick: () => go({ page: 'assignToStudents', exerciseId: e.id }) },
+        { label: 'Assign', onClick: () => go({ page: 'assign', exerciseId: e.id }) },
       ]} />
     </>
   );

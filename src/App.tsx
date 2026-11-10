@@ -1,8 +1,9 @@
 import { useDb } from './model/store';
 import { useStack, type Route } from './nav/nav';
+import { PageEntryContext } from './nav/pageState';
 import { routeHeading, routeHeadingExtras } from './nav/titles';
 import { Badge } from './ui/Badge';
-import { AssignToStudent, AssignToStudents } from './pages/Assign';
+import { Assign, ChooseExercise } from './pages/Assign';
 import { AnswerFeedback } from './pages/AnswerFeedback';
 import { Assignment, Assignments } from './pages/Assignments';
 import { Material, QuestionEditor } from './pages/Editors';
@@ -21,8 +22,8 @@ function Page({ route }: { route: Route }) {
     case 'exercise': return <Exercise id={route.id} />;
     case 'material': return <Material id={route.id} />;
     case 'question': return <QuestionEditor exerciseId={route.exerciseId} questionId={route.questionId} />;
-    case 'assignToStudents': return <AssignToStudents exerciseId={route.exerciseId} />;
-    case 'assignToStudent': return <AssignToStudent studentId={route.studentId} />;
+    case 'assign': return <Assign exerciseId={route.exerciseId} studentId={route.studentId} />;
+    case 'chooseExercise': return <ChooseExercise />;
     case 'assignments': return <Assignments />;
     case 'assignment': return <Assignment id={route.id} />;
     case 'answerFeedback': return <AnswerFeedback assignmentId={route.assignmentId} questionId={route.questionId} />;
@@ -41,7 +42,9 @@ export default function App() {
       <main>
         {extras.kicker && <p className="kicker">{extras.kicker}</p>}
         <h2>{routeHeading(db, top.route)}{extras.badges?.map(b => <span key={b.label}> <Badge color={b.color}>{b.label}</Badge></span>)}</h2>
-        <Page key={top.key} route={top.route} />
+        <PageEntryContext.Provider value={top}>
+          <Page key={top.key} route={top.route} />
+        </PageEntryContext.Provider>
       </main>
     </DrawerProvider>
   );

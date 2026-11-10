@@ -1,60 +1,66 @@
-import { useState } from 'react';
-import { KINDS, studentGroups } from '../model/derived';
+import { studentGroups } from '../model/derived';
 import { friendlyDay } from '../model/format';
 import { assign, useDb } from '../model/store';
-import { back } from '../nav/nav';
-import { DueDateDrawer } from '../ui/DueDateDrawer';
-import { useDrawer } from '../ui/drawerContext';
+import { back, backWith, go, linkTo } from '../nav/nav';
+import { usePageState } from '../nav/pageState';
 import { Badge } from '../ui/Badge';
+import { useDrawer } from '../ui/drawerContext';
+import { DueDateDrawer } from '../ui/DueDateDrawer';
+import { ExerciseCard } from '../ui/ExerciseCard';
 import { Footer } from '../ui/Footer';
-import { Field } from '../ui/rows';
-import { NotFound } from './NotFound';
+import { ActionLink, Empty, Field } from '../ui/rows';
+import { NewExerciseDrawer } from './Exercises';
 
-/** The due date for the new assignments: a row that opens the due date menu. */
-function DueDate({ value, onChange }: { value: string | undefined; onChange: (v: string | undefined) => void }) {
-  const drawer = useDrawer();
-  return <Field label="Due date" value={value ? friendlyDay(value) : 'No due date'}
-    onClick={() => drawer.open(<DueDateDrawer onPick={onChange} />)} />;
-}
-
-/** From an exercise: pick students. */
-export function AssignToStudents({ exerciseId }: { exerciseId: string }) {
+/**
+ * Give one exercise to some students. Where you came from can preset the exercise (from an exercise)
+ * or tick a student (from a student). Choices live in page state, so they survive the exercise picker.
+ */
+export function Assign({ exerciseId: presetExercise, studentId }: { exerciseId?: string; studentId?: string }) {
   const db = useDb();
-  const [due, setDue] = useState<string | undefined>();
-  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
-  const [error, setError] = useState('');
-  const e = db.exercises.find(x => x.id === exerciseId);
-  if (!e || e.status !== 'published') return <NotFound />;
+  const drawer = useDrawer();
+  const [exerciseId] = usePageState('exerciseId', presetExercise);
+  const [due, setDue] = usePageState<string | undefined>('due', undefined);
+  const [picked, setPicked] = usePageState<string[]>('students', studentId ? [studentId] : []);
 
-  const already = new Set(db.assignments.filter(a => a.exerciseId === e.id).map(a => a.studentId));
-  const toggle = (ids: string[], on: boolean) => setPicked(p => {
-    const n = new Set(p);
-    ids.forEach(id => (on ? n.add(id) : n.delete(id)));
-    return n;
-  });
+  const e = db.exercises.find(x => x.id === exerciseId && x.status === 'published');
+  const already = new Set(e ? db.assignments.filter(a => a.exerciseId === e.id).map(a => a.studentId) : []);
+  const chosen = picked.filter(id => !already.has(id));
+  const toggle = (ids: string[], on: boolean) =>
+    setPicked(on ? [...new Set([...picked, ...ids])] : picked.filter(id => !ids.includes(id)));
   const ok = () => {
-    if (!picked.size) return setError('Choose at least one student.');
-    assign(picked, e.id, due);
+    if (!e) return;
+    assign(chosen, e.id, due);
     back();
   };
 
   return (
     <>
-      <p>Exercise: <b>{e.title}</b></p>
-      <DueDate value={due} onChange={setDue} />
-      <p>Choose students. Tick a class to select all of it.</p>
+      <h3>Exercise</h3>
+      {e
+        ? <>
+          <ExerciseCard e={e} onClick={linkTo({ page: 'exercise', id: e.id })} />
+          <ActionLink onClick={() => go({ page: 'chooseExercise' })}>Choose a different exercise</ActionLink>
+        </>
+        : <>
+          <Empty>None</Empty>
+          <ActionLink onClick={() => go({ page: 'chooseExercise' })}>Choose exercise</ActionLink>
+        </>}
+      <Field label="Due date" value={due ? friendlyDay(due) : 'No due date'}
+        onClick={() => drawer.open(<DueDateDrawer onPick={setDue} />)} />
+
+      <h3>Students</h3>
+      <p><small>Tick a class to select all of it.</small></p>
       {studentGroups(db).map(g => {
-        const students = g.students;
-        const free = students.filter(s => !already.has(s.id)).map(s => s.id);
-        const all = free.length > 0 && free.every(id => picked.has(id));
+        const free = g.students.filter(s => !already.has(s.id)).map(s => s.id);
+        const all = free.length > 0 && free.every(id => picked.includes(id));
         return (
           <section key={g.label}>
-            <h3><label>
+            <h4><label>
               <input type="checkbox" disabled={!free.length} checked={all} onChange={ev => toggle(free, ev.target.checked)} /> {g.label}
-            </label></h3>
-            {students.map(s => (
+            </label></h4>
+            {g.students.map(s => (
               <label key={s.id} className="row">
-                <input type="checkbox" disabled={already.has(s.id)} checked={picked.has(s.id)}
+                <input type="checkbox" disabled={already.has(s.id)} checked={chosen.includes(s.id)}
                   onChange={ev => toggle([s.id], ev.target.checked)} /> {s.name}
                 {already.has(s.id) && <> <Badge>Already assigned</Badge></>}
               </label>
@@ -62,43 +68,32 @@ export function AssignToStudents({ exerciseId }: { exerciseId: string }) {
           </section>
         );
       })}
-      {error && <p className="err">{error}</p>}
-      <Footer buttons={[{ label: 'Cancel', onClick: back }, { label: 'Assign', onClick: ok }]} />
+      <Footer buttons={[
+        { label: 'Cancel', onClick: back },
+        { label: chosen.length ? `Assign (${chosen.length})` : 'Assign', onClick: ok, disabled: !e || !chosen.length },
+      ]} />
     </>
   );
 }
 
-/** From a student: pick one published exercise. */
-export function AssignToStudent({ studentId }: { studentId: string }) {
+/** Pick a published exercise for Assign: one tap picks it and goes back. */
+export function ChooseExercise() {
   const db = useDb();
-  const [due, setDue] = useState<string | undefined>();
-  const [exerciseId, setExerciseId] = useState('');
-  const [error, setError] = useState('');
-  const s = db.students.find(x => x.id === studentId);
-  if (!s) return <NotFound />;
-
-  const already = new Set(db.assignments.filter(a => a.studentId === s.id).map(a => a.exerciseId));
-  const published = db.exercises.filter(e => e.status === 'published');
-  const ok = () => {
-    if (!exerciseId) return setError('Choose an exercise.');
-    assign([s.id], exerciseId, due);
-    back();
-  };
-
+  const drawer = useDrawer();
+  const [filter, setFilter] = usePageState('filter', '');
+  const f = filter.trim().toLowerCase();
+  const list = db.exercises
+    .filter(e => e.status === 'published' && e.title.toLowerCase().includes(f))
+    .sort((a, b) => b.dateCreated.localeCompare(a.dateCreated));
   return (
     <>
-      <p>Student: <b>{s.name}</b></p>
-      <DueDate value={due} onChange={setDue} />
-      <p>Choose a published exercise:</p>
-      {published.length ? published.map(e => (
-        <label key={e.id} className="row">
-          <input type="radio" name="exercise" disabled={already.has(e.id)} checked={exerciseId === e.id}
-            onChange={() => setExerciseId(e.id)} /> {e.title}{already.has(e.id) && <> <Badge>Already assigned</Badge></>}
-          <br /><small>{KINDS[e.kind].label}</small>
-        </label>
-      )) : <p>No published exercises.</p>}
-      {error && <p className="err">{error}</p>}
-      <Footer buttons={[{ label: 'Cancel', onClick: back }, { label: 'Assign', onClick: ok }]} />
+      <input className="wide" type="search" placeholder="Filter by title" aria-label="Filter by title"
+        value={filter} onChange={ev => setFilter(ev.target.value)} />
+      {list.length
+        ? list.map(e => <ExerciseCard key={e.id} e={e} onClick={() => backWith('exerciseId', e.id)} />)
+        : <Empty>{f ? 'No published exercise matches.' : 'No published exercises yet.'}</Empty>}
+      <p><small>Only published exercises are listed. Drafts are in Exercises.</small></p>
+      <ActionLink onClick={() => drawer.open(<NewExerciseDrawer />)}>New exercise</ActionLink>
     </>
   );
 }
