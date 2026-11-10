@@ -13,8 +13,9 @@ export interface AudioClip {
   duration: number;
 }
 
-/** The one teacher, for now. Signs in with a code like a student does. */
+/** Any number of teachers, all with the same role: every teacher sees and can review all students' work. Signs in with a code like a student does. */
 export interface Teacher {
+  id: string;
   name: string;
   securityCode: string;
 }
@@ -155,7 +156,7 @@ export interface Feedback {
 
 /** The whole in-memory database. */
 export interface Db {
-  teacher: Teacher;
+  teachers: Teacher[];
   students: Student[];
   exercises: Exercise[];
   assignments: Assignment[];

@@ -5,7 +5,7 @@ import { getDb, pauseAllFor } from './store';
 // anonymous user to the teacher or one student. Here the session is kept in localStorage so a
 // reload keeps you signed in (the data itself still resets).
 
-export type Session = { role: 'teacher' } | { role: 'student'; studentId: string } | null;
+export type Session = { role: 'teacher'; teacherId: string } | { role: 'student'; studentId: string } | null;
 
 const KEY = 'prototype-session';
 const listeners = new Set<() => void>();
@@ -15,6 +15,7 @@ function load(): Session {
     const s = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Session;
     // A student added after load is gone after a reload: then nobody is signed in.
     if (s?.role === 'student' && !getDb().students.some(x => x.id === s.studentId)) return null;
+    if (s?.role === 'teacher' && !getDb().teachers.some(x => x.id === s.teacherId)) return null;
     return s;
   } catch {
     return null;
@@ -43,7 +44,8 @@ const norm = (code: string) => code.toUpperCase().replace(/[^A-Z0-9]/g, '');
 export function signIn(code: string): boolean {
   const db = getDb();
   const c = norm(code);
-  if (c === norm(db.teacher.securityCode)) { set({ role: 'teacher' }); return true; }
+  const t = db.teachers.find(x => norm(x.securityCode) === c);
+  if (t) { set({ role: 'teacher', teacherId: t.id }); return true; }
   const s = db.students.find(x => norm(x.securityCode) === c);
   if (s) { set({ role: 'student', studentId: s.id }); return true; }
   return false;

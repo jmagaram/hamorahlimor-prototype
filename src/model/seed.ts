@@ -7,7 +7,10 @@ export function seed(): Db {
   // a2 is mid-session: its current session began two minutes before the page loaded.
   const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
   return {
-    teacher: { name: 'Justin', securityCode: 'TCHR-4827' },
+    teachers: [
+      { id: 't1', name: 'Justin', securityCode: 'TCHR-4827' },
+      { id: 't2', name: 'Dana', securityCode: 'TCHR-6152' },
+    ],
     students: [
       { id: 's1', name: 'Noa Levi', className: 'Aleph', securityCode: 'K7P2-WX4M', dateCreated: '2026-09-01' },
       { id: 's2', name: 'Itai Cohen', className: 'Aleph', securityCode: 'M3Q9-HT6B', dateCreated: '2026-09-01' },

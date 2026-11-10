@@ -132,7 +132,7 @@ Why things are the way they are. Newest first. Each entry: the decision, why, an
 
 **Why.** The real app uses Firebase anonymous auth with a code tying the anonymous user to a person, so this is the real flow, and it doubles as the way to switch between teacher and student while walking through the prototype. Showing the code on sign-out avoids students locking themselves out. 4-character codes were too easy to guess.
 
-**Open.** The teacher is a single record for now; several teachers (or schools) would need a Teacher entity with ids and ownership of students and exercises.
+**Later decided (2026-11-10).** Many teachers, one role: any teacher can see and review all work, so there's no ownership on students or exercises.
 
 ## Student side: soft time limit, feedback under each answer (2026-11-10)
 
