@@ -40,7 +40,7 @@ export function Assignments() {
           onClick: () => drawer.open(<ConfirmDrawer title={`Unassign ${sel.count}?`} message="Any answers and feedback are deleted."
             confirmLabel="Unassign" onConfirm={() => { unassign(sel.selected); sel.cancel(); }} />),
         },
-      ] : [{ label: 'Select', onClick: sel.start }]} />
+      ] : [{ label: 'Select', onClick: sel.start }, { label: 'New assignment', onClick: () => go({ page: 'assign' }) }]} />
     </>
   );
 }

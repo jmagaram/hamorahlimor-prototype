@@ -97,7 +97,7 @@ export function Student({ id }: { id: string }) {
       <h3>Assignments</h3>
       <GroupedAssignments assignments={db.assignments.filter(a => a.studentId === id)}
         label={a => title(a.exerciseId)} sub={a => dueText(a.dueDate)} />
-      <Footer buttons={[{ label: 'Assign exercise', onClick: () => go({ page: 'assignToStudent', studentId: id }) }]} />
+      <Footer buttons={[{ label: 'Assign exercise', onClick: () => go({ page: 'assign', studentId: id }) }]} />
     </>
   );
 }
