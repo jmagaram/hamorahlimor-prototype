@@ -13,6 +13,12 @@ export interface AudioClip {
   duration: number;
 }
 
+/** The one teacher, for now. Signs in with a code like a student does. */
+export interface Teacher {
+  name: string;
+  securityCode: string;
+}
+
 export interface Student {
   id: string;
   name: string;
@@ -146,6 +152,7 @@ export interface Feedback {
 
 /** The whole in-memory database. */
 export interface Db {
+  teacher: Teacher;
   students: Student[];
   exercises: Exercise[];
   assignments: Assignment[];

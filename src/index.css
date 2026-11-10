@@ -1,6 +1,7 @@
 /* Layout only. Browser defaults for everything else. */
 body { margin: 0 auto; max-width: 520px; font-family: system-ui, sans-serif; }
 header { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #ccc; padding: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; z-index: 1; }
+#topline { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; width: 100%; }
 #crumbs { font-size: 14px; }
 #back { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 main { padding: 4px 12px 96px; }

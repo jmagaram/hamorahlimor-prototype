@@ -84,6 +84,10 @@ export function backWith(name: string, value: unknown) {
 export function back() {
   if (stack.length > 1) set(stack.slice(0, -1));
 }
+/** Back to Home with nothing above it (after signing in or out). */
+export function resetToHome() {
+  set([entry({ page: 'home' })]);
+}
 export function crumb(i: number) {
   set(stack.slice(0, i + 1));
 }

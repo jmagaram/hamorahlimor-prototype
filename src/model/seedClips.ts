@@ -220,7 +220,7 @@ export const moreStudents: Student[] = [
   ['Omar Saleh', 'Gimel'], ['Hila Golan', 'Gimel'], ['Karim Abbas', 'Gimel'], ['Daniel Azoulay', undefined],
 ].map(([name, className], i) => ({
   id: `s${i + 6}`, name: name as string, ...(className && { className }),
-  securityCode: ['P4W8', 'Z9C3', 'D6J2', 'T3V7', 'G8K5', 'N2R9', 'X5F4', 'Q7H3', 'C9M6', 'W2B8', 'F6Y4'][i],
+  securityCode: ['P4W8-A3RK', 'Z9C3-MF7T', 'D6J2-XB5Q', 'T3V7-KW9N', 'G8K5-RD2H', 'N2R9-CY6P', 'X5F4-JT8M', 'Q7H3-PV4Z', 'C9M6-HN3W', 'W2B8-ZK7F', 'F6Y4-DQ2X'][i],
   dateCreated: '2026-09-04',
 }));
 

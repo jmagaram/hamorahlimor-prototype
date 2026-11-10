@@ -7,12 +7,13 @@ export function seed(): Db {
   // a2 is mid-session: its current session began two minutes before the page loaded.
   const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
   return {
+    teacher: { name: 'Justin', securityCode: 'TCHR-4827' },
     students: [
-      { id: 's1', name: 'Noa Levi', className: 'Aleph', securityCode: 'K7P2', dateCreated: '2026-09-01' },
-      { id: 's2', name: 'Itai Cohen', className: 'Aleph', securityCode: 'M3Q9', dateCreated: '2026-09-01' },
-      { id: 's3', name: 'Maya Peretz', className: 'Aleph', securityCode: 'R8T4', dateCreated: '2026-09-02' },
-      { id: 's4', name: 'Yonatan Mizrahi', className: 'Bet', securityCode: 'B2X6', dateCreated: '2026-09-03' },
-      { id: 's5', name: 'Tamar Biton', className: 'Bet', securityCode: 'H5N1', dateCreated: '2026-09-03' },
+      { id: 's1', name: 'Noa Levi', className: 'Aleph', securityCode: 'K7P2-WX4M', dateCreated: '2026-09-01' },
+      { id: 's2', name: 'Itai Cohen', className: 'Aleph', securityCode: 'M3Q9-HT6B', dateCreated: '2026-09-01' },
+      { id: 's3', name: 'Maya Peretz', className: 'Aleph', securityCode: 'R8T4-ZN2C', dateCreated: '2026-09-02' },
+      { id: 's4', name: 'Yonatan Mizrahi', className: 'Bet', securityCode: 'B2X6-QP8D', dateCreated: '2026-09-03' },
+      { id: 's5', name: 'Tamar Biton', className: 'Bet', securityCode: 'H5N1-VJ3K', dateCreated: '2026-09-03' },
       ...moreStudents,
     ],
     exercises: [

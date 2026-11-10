@@ -1,3 +1,4 @@
+import { useSession } from './model/session';
 import { useDb } from './model/store';
 import { useStack, type Route } from './nav/nav';
 import { PageEntryContext } from './nav/pageState';
@@ -9,6 +10,8 @@ import { Assignment, Assignments } from './pages/Assignments';
 import { Material, QuestionEditor } from './pages/Editors';
 import { Exercise, Exercises } from './pages/Exercises';
 import { Home } from './pages/Home';
+import { SignIn } from './pages/SignIn';
+import { StudentHome } from './pages/StudentHome';
 import { Student, Students } from './pages/Students';
 import { DrawerProvider } from './ui/Drawer';
 import { Header } from './ui/Header';
@@ -34,8 +37,12 @@ function Page({ route }: { route: Route }) {
 export default function App() {
   const stack = useStack();
   const db = useDb();
+  const session = useSession();
   const top = stack[stack.length - 1];
   const extras = routeHeadingExtras(db, top.route);
+  // Nobody signed in: the whole app is the sign-in screen.
+  if (!session) return <DrawerProvider><SignIn /></DrawerProvider>;
+  if (session.role === 'student') return <DrawerProvider><Header /><main><StudentHome /></main></DrawerProvider>;
   return (
     <DrawerProvider>
       <Header />
