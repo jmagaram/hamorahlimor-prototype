@@ -1,5 +1,5 @@
 import { filterExercises, isOpen, lastSubmitted, studentGroups, type ExerciseShow } from '../model/derived';
-import { formatTimestamp, friendlyDay } from '../model/format';
+import { daysAgo, formatTimestamp, friendlyDay } from '../model/format';
 import { assign, useDb } from '../model/store';
 import { back, backWith, go, linkTo } from '../nav/nav';
 import { usePageState } from '../nav/pageState';
@@ -66,7 +66,7 @@ export function Assign({ exerciseId: presetExercise, studentId }: { exerciseId?:
                   <input type="checkbox" disabled={already.has(s.id)} checked={chosen.includes(s.id)}
                     onChange={ev => toggle([s.id], ev.target.checked)} /> {s.name}
                   {already.has(s.id) && <> <Badge>Already assigned</Badge></>}
-                  {before?.dateSubmitted && <><br /><small>Submitted before · {friendlyDay(formatTimestamp(before.dateSubmitted))}</small></>}
+                  {before?.dateSubmitted && <><br /><small>Submitted {daysAgo(formatTimestamp(before.dateSubmitted))}</small></>}
                 </label>
               );
             })}
