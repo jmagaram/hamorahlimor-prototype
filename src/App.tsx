@@ -11,6 +11,7 @@ import { Material, QuestionEditor } from './pages/Editors';
 import { Exercise, Exercises } from './pages/Exercises';
 import { Home } from './pages/Home';
 import { SignIn } from './pages/SignIn';
+import { StudentAssignment, WorkKicker } from './pages/StudentAssignment';
 import { StudentHome } from './pages/StudentHome';
 import { Student, Students } from './pages/Students';
 import { DrawerProvider } from './ui/Drawer';
@@ -19,6 +20,8 @@ import { Header } from './ui/Header';
 function Page({ route }: { route: Route }) {
   switch (route.page) {
     case 'home': return <Home />;
+    case 'studentHome': return <StudentHome />;
+    case 'work': return <StudentAssignment id={route.id} />;
     case 'students': return <Students />;
     case 'student': return <Student id={route.id} />;
     case 'exercises': return <Exercises />;
@@ -42,13 +45,12 @@ export default function App() {
   const extras = routeHeadingExtras(db, top.route);
   // Nobody signed in: the whole app is the sign-in screen.
   if (!session) return <DrawerProvider><SignIn /></DrawerProvider>;
-  if (session.role === 'student') return <DrawerProvider><Header /><main><StudentHome /></main></DrawerProvider>;
   return (
     <DrawerProvider>
       <Header />
       {/* key: a different page (or the same page with other params) starts with fresh state */}
       <main>
-        {extras.kicker && <p className="kicker">{extras.kicker}</p>}
+        {top.route.page === 'work' ? <WorkKicker id={top.route.id} /> : extras.kicker && <p className="kicker">{extras.kicker}</p>}
         <h2>{routeHeading(db, top.route)}{extras.badges?.map(b => <span key={b.label}> <Badge color={b.color}>{b.label}</Badge></span>)}</h2>
         <PageEntryContext.Provider value={top}>
           <Page key={top.key} route={top.route} />

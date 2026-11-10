@@ -21,9 +21,11 @@ export function Header() {
   const student = session.role === 'student' ? db.students.find(s => s.id === session.studentId) : undefined;
   const name = (student ? student.name : db.teacher.name).split(' ')[0];
   const code = student ? student.securityCode : db.teacher.securityCode;
-  // The student side has no navigation yet; the trail is the teacher's.
-  const trail = session.role === 'teacher' ? stack : stack.slice(0, 1);
-  const parent = trail.length > 1 ? trail[trail.length - 2] : undefined;
+  const trail = stack;
+  // While a student is working, leaving is Pause (or Submit), not Back.
+  const top = stack[stack.length - 1].route;
+  const working = top.page === 'work' && db.assignments.find(a => a.id === top.id)?.state === 'active';
+  const parent = trail.length > 1 && !working ? trail[trail.length - 2] : undefined;
   const above = trail.slice(0, -2);
   return (
     <header>

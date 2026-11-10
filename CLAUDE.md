@@ -2,7 +2,7 @@
 
 A web app for an English teacher in Israel. Students practice spoken English (modeled on the oral bagrut / COBE): they watch, read, or listen to material, then record spoken answers to questions. The teacher creates exercises, assigns them, and reviews answers with comments.
 
-Two users: **teacher** and **student**. This phase builds a **click-through prototype of the teacher experience**, plus sign-in; the student side is next.
+Two users: **teacher** and **student**. This phase builds a **click-through prototype** of both, signed in by code; the student side is newer and smaller.
 
 ## Current phase: click-through prototype
 
@@ -73,6 +73,13 @@ Style:
 - **Counts**: don't show counts ("Draft (2)", "5 students") unless asked for. Lists are short and the teacher can see them. Bulk-action buttons in select mode keep theirs (`Delete (3)`).
 - **Help text**: explanations about a setting go inside that setting's drawer (under its title), not on the page among the rows.
 - **Links**: a link on its own, not inside a sentence (`Add question`, header crumbs), has no underline: use `ActionLink`. A link inside a sentence keeps the browser's underline.
+
+Student side:
+
+- Same frame, navigation and drawers; its own Home (`studentHome`: **To do** due soonest first, **Done** newest first, with `Overdue`, `In progress`, `Paused`, `New feedback` badges).
+- **Assignment** (`work`) is one page that changes with the state. Not started or paused: a summary (what to do, facts) and `Start` / `Resume`. Active: the material, then each question with its answer; `Pause` · `Submit`, both back to Home; no Back button while working. Submitted: the same, read-only, and once published the teacher's feedback right under each answer (timed comments, then the comment on the whole answer), with the overall feedback at the end; opening it marks it seen.
+- **Time limit is soft**: the clock is a quiet part of the kicker line (`Watch and answer · 0:54 of 5:00`), and past the limit it keeps going with an amber `0:10 over`. Nothing stops or submits. No `Overdue` badge on the page while working (it's on Home).
+- The recorder shows the answer's target (`Aim for about 1 min`, then `of about 1 min`, then amber `0:12 over 1 min`). Questions can be answered in any order. One take only means no `Record again` once recorded.
 
 Navigation:
 

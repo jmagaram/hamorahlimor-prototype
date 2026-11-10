@@ -31,6 +31,11 @@ export function routeTitle(db: Db, r: Route): string {
       return `${s?.name} · ${e?.title}${repeatSuffix(db, a)}`;
     }
     case 'overallFeedback': return 'Overall feedback';
+    case 'studentHome': return 'Home';
+    case 'work': {
+      const a = db.assignments.find(x => x.id === r.id);
+      return db.exercises.find(e => e.id === a?.exerciseId)?.title ?? NOT_FOUND;
+    }
     case 'answerFeedback': {
       const a = db.assignments.find(x => x.id === r.assignmentId);
       const i = db.exercises.find(x => x.id === a?.exerciseId)?.questions.findIndex(q => q.id === r.questionId) ?? -1;
@@ -45,6 +50,7 @@ export function routeHeading(db: Db, r: Route): string {
   if (title === NOT_FOUND) return title;
   switch (r.page) {
     case 'home': return 'English practice';
+    case 'studentHome': return 'Your assignments';
     case 'answerFeedback': {
       const a = db.assignments.find(x => x.id === r.assignmentId);
       const name = db.students.find(s => s.id === a?.studentId)?.name.split(' ')[0];
@@ -73,6 +79,13 @@ export function routeHeadingExtras(db: Db, r: Route): HeadingExtras {
       kicker: KINDS[e.kind].kicker,
       badges: [{ label: e.status === 'draft' ? 'Draft' : 'Published', color: EXERCISE_STATUS_COLOR[e.status] }],
     };
+  }
+  if (r.page === 'work') {
+    const a = db.assignments.find(x => x.id === r.id);
+    const e = db.exercises.find(x => x.id === a?.exerciseId);
+    if (!a || !e) return {};
+    // No Overdue here: not motivating while doing the work. The page draws its own kicker with the clock.
+    return { kicker: KINDS[e.kind].kicker };
   }
   if (r.page === 'answerFeedback') return { kicker: routeTitle(db, r).replace(' feedback', '') };
   if (r.page === 'assignment') {

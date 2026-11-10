@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { feedbackFor, isOpen } from '../model/derived';
 import { signIn } from '../model/session';
 import { useDb } from '../model/store';
 import { resetToHome } from '../nav/nav';
@@ -13,6 +14,14 @@ export function SignIn() {
   const drawer = useDrawer();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  // Prototype: a hint at what each student has, so you can find one to look at.
+  const whatTheyHave = (studentId: string) => {
+    const mine = db.assignments.filter(a => a.studentId === studentId);
+    const toDo = mine.filter(isOpen).length;
+    const done = mine.length - toDo;
+    const fresh = mine.filter(a => { const f = feedbackFor(db, a.id); return f?.status === 'published' && !f.dateSeen; }).length;
+    return [toDo && `${toDo} to do`, done && `${done} done`, fresh && 'new feedback'].filter(Boolean).join(' · ') || 'Nothing assigned';
+  };
   const go = (c: string) => {
     if (!signIn(c)) return setError('No one has that code.');
     resetToHome();
@@ -32,7 +41,7 @@ export function SignIn() {
         {' · '}
         <ActionLink onClick={() => drawer.open(
           <MenuDrawer title="Sign in as a student"
-            options={[...db.students].sort((a, b) => a.name.localeCompare(b.name)).map(s => ({ label: s.name, sub: s.securityCode, value: s.securityCode }))}
+            options={[...db.students].sort((a, b) => a.name.localeCompare(b.name)).map(s => ({ label: s.name, sub: whatTheyHave(s.id), value: s.securityCode }))}
             onPick={go} />)}>Student</ActionLink>
       </small></p>
 

@@ -64,6 +64,7 @@ erDiagram
     string status "draft, published"
     timestamp dateStarted
     timestamp datePublished
+    timestamp dateSeen
   }
 ```
 
@@ -98,7 +99,7 @@ The template. One structure for every kind: the material varies, and the questio
 | `speaking` | Speaking questions | none |
 
 - A draft can have incomplete material: an empty `url` or `text`, or no `audio`. Publishing requires them.
-- `timeLimit`: for the whole exercise. One value on the exercise, with no per-assignment override. To get a different limit, duplicate the exercise.
+- `timeLimit`: for the whole exercise, and soft: a guide shown to the student, never a cutoff (the clock keeps going past it). One value on the exercise, with no per-assignment override. To get a different limit, duplicate the exercise.
 - `questionMode`: how students get each question. `read`: they read the text. `hear`: they only hear the audio (listening practice, or simulating the exam); the text is for the teacher. `readAndHear`: both. In `hear` and `readAndHear`, publishing requires audio on every question; in `read`, question audio isn't used.
 - `allowRerecord`: if true, a student can re-record an answer before submitting, which overwrites it. If false, it's one take, like the real exam.
 
@@ -137,6 +138,7 @@ Zero or one per assignment; it exists once the teacher starts reviewing.
   - `TimedComment` = `Comment` + `{ id, atSeconds }`. `atSeconds` is where in the answer the teacher paused to comment. Kept sorted by `atSeconds`, and numbered in that order for display ("Comment 1…n"), so numbers aren't stored.
 - `status`: `draft` | `published`. A single status for the whole thing: the student sees **nothing**, overall or per answer, until it is published. Once published it stays published and cannot go back to draft: later edits reach the student right away and update `datePublished`. Each comment is saved as the teacher makes it; the first one creates the Feedback as a draft, and a draft whose comments are all removed is deleted (back to Needs review).
 - `dateStarted`, `datePublished`
+- `dateSeen`: when the student first opened the published feedback. Absent means it's new to them ("New feedback" on their Home).
 - Grades: not included yet. If needed later, add an optional `grade` to the overall `Comment`s (per answer and per assignment).
 - Later, for the student screen: whether the student has heard each comment (per comment, stored on the student side).
 
