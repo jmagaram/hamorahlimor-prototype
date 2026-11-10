@@ -77,8 +77,25 @@ export function materialSummary(e: Exercise): string {
 }
 
 /** Assignment ids in the order grouped lists show them, for "Select all". */
-export const groupedOrder = (db: Db, assignments: Assignment[]): string[] =>
-  DISPLAY_STATUSES.flatMap(st => assignments.filter(a => displayStatus(db, a) === st).map(a => a.id));
+/**
+ * Assignments in "needs you first" order: Needs review (waited longest first), Feedback draft,
+ * overdue, then the rest of the unfinished ones by due date (nearest first, no due date last),
+ * then Done (most recent first).
+ */
+export function attentionOrder(db: Db, assignments: Assignment[], day: string): Assignment[] {
+  const rank = (a: Assignment) => {
+    const st = displayStatus(db, a);
+    return st === 'Needs review' ? 0 : st === 'Feedback draft' ? 1 : st === 'Done' ? 4 : isOverdue(a, day) ? 2 : 3;
+  };
+  const key = (a: Assignment) => {
+    const r = rank(a);
+    if (r <= 1 || r === 4) return a.dateSubmitted ?? '';
+    return (a.dueDate ?? '9999') + a.dateAssigned;
+  };
+  // Done sorts newest first: compare its keys reversed.
+  return [...assignments].sort((x, y) => rank(x) - rank(y)
+    || (rank(x) === 4 ? key(y).localeCompare(key(x)) : key(x).localeCompare(key(y))));
+}
 
 /* ---------- classes (free text on Student, no entity) ---------- */
 

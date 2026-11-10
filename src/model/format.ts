@@ -55,11 +55,10 @@ export function friendlyDay(date: DateString): string {
 }
 
 /** "due today, Mon 9-Nov", "due Wed 11-Nov", or "" with no due date (for lines under a row). */
-export const dueText = (dueDate: DateString | undefined) => {
-  if (!dueDate) return '';
-  const f = friendlyDay(dueDate);
-  return `due ${f[0].toLowerCase()}${f.slice(1)}`;
-};
+/** friendlyDay for the middle of a sentence: "today, Mon 9-Nov", "Wed 11-Nov" (weekdays stay capitalized). */
+export const friendlyDayInline = (date: DateString) => friendlyDay(date).replace(/^(Today|Tomorrow|Yesterday)/, w => w.toLowerCase());
+
+export const dueText = (dueDate: DateString | undefined) => (dueDate ? `due ${friendlyDayInline(dueDate)}` : '');
 
 /** Whole days from one calendar day to another (negative if `to` is earlier). */
 export function daysBetween(from: DateString, to: DateString): number {

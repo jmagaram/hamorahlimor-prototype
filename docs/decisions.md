@@ -117,3 +117,11 @@ Why things are the way they are. Newest first. Each entry: the decision, why, an
 **Why.** Teachers repeat the same oral exercise (e.g. a project check-in every couple of weeks). A second open copy is almost always a mistake, but redoing a finished one is legitimate. Each assignment already has its own id, answers and feedback, so no schema change. "Submitted" (not "feedback published") is the cutoff because it's when the student's part is done.
 
 **Gave up.** We considered numbering repeats ("(2)"); the date is more meaningful to a teacher. Two repeats assigned on the same day would look alike (unlikely). Not yet: a link from an assignment to the student's earlier attempts, to compare answers over time.
+
+## Assignment lists: flat, sorted, a badge per row (2026-11-10)
+
+**Decision.** Assignments, an exercise's "Assigned to", and a student's assignments are one flat list each, not grouped under status headings. Each row has a colored status badge (plus `Overdue`) on its second line, then context and the relevant date ("submitted Wed 4-Nov" or "due Thu 12-Nov"). Order: Needs review (waited longest first), Feedback draft, overdue, the other unfinished ones by due date, Done last (newest first).
+
+**Why.** Nested status headings (an h4 per status under "Assigned to") were busy to look at, and a row meant nothing without its heading. Badges make each row self-explaining and easy to scan by color; the sort order keeps "what needs me" at the top, which was the headings' real value.
+
+**Later.** Assignments will grow to hundreds of mostly Done rows. Add a filter (Needs review · Not done · All, default Not done) when that matters.

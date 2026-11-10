@@ -1,5 +1,5 @@
-import { answerFeedbackSummary, commentSummary, answerFor, audioSummary, hasQuestionAudio, clipRange, clipSummary, feedbackFor, groupedOrder, materialSummary, MATERIAL_HEADING, timeTaken } from '../model/derived';
-import { daysBetween, dueText, friendlyDay, formatTimestamp, minutes, mmss } from '../model/format';
+import { answerFeedbackSummary, commentSummary, answerFor, audioSummary, hasQuestionAudio, clipRange, clipSummary, feedbackFor, materialSummary, MATERIAL_HEADING, timeTaken } from '../model/derived';
+import { daysBetween, friendlyDay, formatTimestamp, minutes, mmss } from '../model/format';
 import { publishFeedback, setDueDate, unassign, useDb } from '../model/store';
 import type { Assignment as AssignmentT, Exercise as ExerciseT } from '../model/types';
 import { back, go, linkTo } from '../nav/nav';
@@ -10,7 +10,7 @@ import { ConfirmDrawer, DrawerShell } from '../ui/Drawer';
 import { DueDateDrawer } from '../ui/DueDateDrawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer, type FooterButton } from '../ui/Footer';
-import { GroupedAssignments } from '../ui/GroupedAssignments';
+import { AssignmentList } from '../ui/AssignmentList';
 import { Facts, Field } from '../ui/rows';
 import { SelectAllBar } from '../ui/selection';
 import { useSelection } from '../ui/useSelection';
@@ -24,10 +24,10 @@ export function Assignments() {
   const exercise = (id: string) => db.exercises.find(e => e.id === id);
   return (
     <>
-      <SelectAllBar sel={sel} ids={groupedOrder(db, db.assignments)} />
-      <GroupedAssignments assignments={db.assignments} sel={sel}
+      <SelectAllBar sel={sel} ids={db.assignments.map(a => a.id)} />
+      <AssignmentList assignments={db.assignments} sel={sel}
         label={a => `${student(a.studentId)?.name} · ${exercise(a.exerciseId)?.title}`}
-        sub={a => [student(a.studentId)?.className, dueText(a.dueDate)].filter(Boolean).join(' · ')} />
+        context={a => student(a.studentId)?.className} />
       <Footer buttons={sel.selecting ? [
         { label: 'Cancel', onClick: sel.cancel },
         {
