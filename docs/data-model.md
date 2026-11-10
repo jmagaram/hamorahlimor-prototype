@@ -142,7 +142,7 @@ Zero or one per assignment; it exists once the teacher starts reviewing.
 | Feedback draft | `state = submitted`, Feedback is `draft` |
 | Done | `state = submitted`, Feedback is `published` |
 
-Lists of assignments are grouped in this order: Needs review, Feedback draft, In progress, Paused, Not started, Done.
+Lists of assignments are one flat list in "needs you first" order: Needs review (waited longest first), Feedback draft, overdue, the other unfinished ones by due date (nearest first, none last), then Done (most recent first). Each row shows its status as a badge.
 
 ## Planned Firestore layout (real app, not the prototype)
 

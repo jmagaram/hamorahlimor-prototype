@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { audioSummary, clipRange, clipSummary, hasQuestionAudio, isEmptyDraft, MATERIAL_HEADING, QUESTION_MODES, questionModeLabel, KINDS, materialSummary, publishProblem } from '../model/derived';
-import { dueText, minutes, mmss } from '../model/format';
+import { minutes, mmss } from '../model/format';
 import { addQuestion, createExercise, getDb, deleteExercise, duplicateExercises, publishExercise, updateDraft, useDb } from '../model/store';
 import type { Exercise as ExerciseT, ExerciseKind, QuestionMode } from '../model/types';
 import { back, go } from '../nav/nav';
@@ -9,7 +9,7 @@ import { AudioDrawer } from '../ui/audio';
 import { Badge } from '../ui/Badge';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer } from '../ui/Footer';
-import { GroupedAssignments } from '../ui/GroupedAssignments';
+import { AssignmentList } from '../ui/AssignmentList';
 import { ActionLink, Empty, Facts, Field, Row } from '../ui/rows';
 import { NotFound } from './NotFound';
 
@@ -189,9 +189,9 @@ function LockedExercise({ e }: { e: ExerciseT }) {
       })}
 
       <h3>Assigned to</h3>
-      <GroupedAssignments nested assignments={db.assignments.filter(a => a.exerciseId === e.id)}
+      <AssignmentList assignments={db.assignments.filter(a => a.exerciseId === e.id)}
         label={a => db.students.find(s => s.id === a.studentId)?.name}
-        sub={a => [db.students.find(s => s.id === a.studentId)?.className, dueText(a.dueDate)].filter(Boolean).join(' · ')} />
+        context={a => db.students.find(s => s.id === a.studentId)?.className} />
 
       <Footer buttons={[
         { label: 'Duplicate', onClick: () => go({ page: 'exercise', id: duplicateExercises([e.id])[0] }) },

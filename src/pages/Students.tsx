@@ -4,11 +4,11 @@ import { addStudent, deleteStudents, getDb, regenerateSecurityCode, renameStuden
 import { go } from '../nav/nav';
 import { ClassPickDrawer, ClassRadios } from '../ui/ClassPicker';
 import { initialClassChoice, resolveClassChoice } from '../ui/classChoice';
-import { dueText, friendlyDay } from '../model/format';
+import { friendlyDay } from '../model/format';
 import { ConfirmDrawer, DrawerShell, InputDrawer } from '../ui/Drawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer } from '../ui/Footer';
-import { GroupedAssignments } from '../ui/GroupedAssignments';
+import { AssignmentList } from '../ui/AssignmentList';
 import { Empty, Facts, Field } from '../ui/rows';
 import { SelectAllBar, SelectableRow } from '../ui/selection';
 import { useSelection } from '../ui/useSelection';
@@ -95,8 +95,8 @@ export function Student({ id }: { id: string }) {
       <Field label="Security code" value="••••  (tap to show)" onClick={() => drawer.open(<SecurityCodeDrawer id={id} />)} />
       <Facts items={[['Created', friendlyDay(s.dateCreated)]]} />
       <h3>Assignments</h3>
-      <GroupedAssignments assignments={db.assignments.filter(a => a.studentId === id)}
-        label={a => title(a.exerciseId)} sub={a => dueText(a.dueDate)} />
+      <AssignmentList assignments={db.assignments.filter(a => a.studentId === id)}
+        label={a => title(a.exerciseId)} />
       <Footer buttons={[{ label: 'Assign exercise', onClick: () => go({ page: 'assign', studentId: id }) }]} />
     </>
   );
