@@ -28,7 +28,6 @@ erDiagram
     object material "depends on kind"
     string status "draft, published"
     int timeLimit "minutes, optional"
-    bool allowRerecord
     string questionMode "read, hear, readAndHear"
     date dateCreated
   }
@@ -88,7 +87,7 @@ One for now (`Db.teacher`). Signs in with a code, like a student.
 ### Exercise
 The template. One structure for every kind: the material varies, and the questions work the same way.
 
-- `id`, `title`, `kind`, `material`, `status`, `timeLimit?`, `allowRerecord`, `questionMode`, `dateCreated`, `questions[]` (one or more to publish)
+- `id`, `title`, `kind`, `material`, `status`, `timeLimit?`, `questionMode`, `dateCreated`, `questions[]` (one or more to publish)
 - `kind` and its `material`:
 
 | kind | Label | Material |
@@ -101,7 +100,6 @@ The template. One structure for every kind: the material varies, and the questio
 - A draft can have incomplete material: an empty `url` or `text`, or no `audio`. Publishing requires them.
 - `timeLimit`: for the whole exercise, and soft: a guide shown to the student, never a cutoff (the clock keeps going past it). One value on the exercise, with no per-assignment override. To get a different limit, duplicate the exercise.
 - `questionMode`: how students get each question. `read`: they read the text. `hear`: they only hear the audio (listening practice, or simulating the exam); the text is for the teacher. `readAndHear`: both. In `hear` and `readAndHear`, publishing requires audio on every question; in `read`, question audio isn't used.
-- `allowRerecord`: if true, a student can re-record an answer before submitting, which overwrites it. If false, it's one take, like the real exam.
 
 **Lifecycle:** `draft` is fully editable. `published` is **locked**, and only published exercises can be assigned. To change a published exercise, **Duplicate** it, which creates a new draft. Locking guarantees that students' answers always match the questions they answered.
 
@@ -124,7 +122,7 @@ One exercise given to one student. It also holds the student's progress (there i
 - A student can get the same exercise again (a repeat, e.g. an oral project every couple of weeks), each time as a new Assignment with its own answers and feedback. Rule: **at most one open (not submitted) assignment per student + exercise**. The UI enforces it (Assign blocks the student, `assign()` skips them); the data doesn't need to.
 
 ### Answer
-- Key: `assignmentId` + `questionId`, so there is at most one answer per question per assignment. Re-recording overwrites it.
+- Key: `assignmentId` + `questionId`, so there is at most one answer per question per assignment. A student can re-record an answer as often as they like before submitting; it overwrites the answer.
 - `recording` (audio file), `duration` (seconds), `dateRecorded`
 - "Over target" means `duration` > the question's `targetSeconds`.
 

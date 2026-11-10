@@ -50,7 +50,6 @@ function Summary({ a, e }: { a: Assignment; e: Exercise }) {
       <Facts items={[
         ['Due', a.dueDate && friendlyDay(a.dueDate)],
         ['Time limit', e.timeLimit ? `${e.timeLimit} min` : 'None'],
-        ['Re-recording', e.allowRerecord ? 'Allowed' : 'One take only'],
         ['Time used', a.dateStarted && `${mmss(timeTaken(a))}${limit ? ` of ${mmss(limit)}` : ''}`],
       ]} />
       {limit && !a.dateStarted && <p><small>The clock starts when you tap Start. You can pause it, and keep going past the time limit if you need to.</small></p>}
@@ -63,7 +62,9 @@ function Working({ a, e }: { a: Assignment; e: Exercise }) {
   const db = useDb();
   const drawer = useDrawer();
   const missing = e.questions.filter(q => !answerFor(db, a.id, q.id)).length;
-  const submit = () => drawer.open(<ConfirmDrawer title="Submit?" confirmLabel="Submit"
+  const submit = () => missing === e.questions.length
+    ? drawer.open(<DrawerShell title="Can't submit yet"><p>Record an answer to at least one question first.</p></DrawerShell>)
+    : drawer.open(<ConfirmDrawer title="Submit?" confirmLabel="Submit"
     message={`${missing ? `${plural(missing, 'question')} ${missing === 1 ? 'has' : 'have'} no answer. ` : ''}You can't change your answers after.`}
     onConfirm={() => { submitAssignment(a.id); back(); }} />);
 
@@ -115,7 +116,7 @@ function Submitted({ a, e }: { a: Assignment; e: Exercise }) {
         ['Time taken', mmss(a.secondsTaken)],
       ]} />
       {!published && <p>Waiting for feedback from your teacher.</p>}
-      <Material e={e} />
+      <Material e={e} collapsed />
       <Questions a={a} e={e} feedback={published} />
       {published && hasContent(published.overall) && <>
         <h3>Overall feedback</h3>
@@ -128,7 +129,7 @@ function Submitted({ a, e }: { a: Assignment; e: Exercise }) {
 const hasContent = (c: Comment) => !!(c.text || c.audio);
 
 /** The exercise's material: a video to open, audio to play, or the text itself. */
-function Material({ e }: { e: Exercise }) {
+function Material({ e, collapsed = false }: { e: Exercise; collapsed?: boolean }) {
   const drawer = useDrawer();
   if (e.kind === 'speaking') return null;
   return <>
@@ -146,7 +147,11 @@ function Material({ e }: { e: Exercise }) {
       <Field label="Recording" value={`${PLAY} ${mmss(e.material.audio.duration)}`} onClick={() => drawer.open(
         <AudioDrawer title="Audio to listen to" value={e.material.audio} readOnly autoPlay />)} />
     )}
-    {e.kind === 'read' && <p style={{ whiteSpace: 'pre-wrap' }}>{e.material.text}</p>}
+    {e.kind === 'read' && (collapsed
+      // Done: a few lines, tap for the whole text, so the answers and comments stay near the top.
+      ? <Field label="Text" value={<span className="clamp3">{e.material.text}</span>} onClick={() => drawer.open(
+        <DrawerShell title="Text to read"><p style={{ whiteSpace: 'pre-wrap' }}>{e.material.text}</p></DrawerShell>)} />
+      : <p style={{ whiteSpace: 'pre-wrap' }}>{e.material.text}</p>)}
   </>;
 }
 
@@ -163,8 +168,7 @@ function Questions({ a, e, canRecord = false, feedback }: { a: Assignment; e: Ex
       const clip = ans && { path: ans.recording, duration: ans.duration };
       const t = q.targetSeconds;
       const af = feedback?.answerFeedback[q.id];
-      // One take only: once recorded, it can only be played.
-      const locked = !canRecord || (!!clip && !e.allowRerecord);
+      const locked = !canRecord;
       return (
         <section key={q.id}>
           <h3>Question {n}</h3>
@@ -177,8 +181,7 @@ function Questions({ a, e, canRecord = false, feedback }: { a: Assignment; e: Ex
             ? <>Recorded · {mmss(clip.duration)}{t && <> (target {minutes(t)})</>}{t && clip.duration > t && <> <Badge color="amber">Over target</Badge></>}</>
             : <>Not recorded yet{t && <> (target {minutes(t)})</>}</>}
             onClick={clip || canRecord ? () => drawer.open(
-              <AudioDrawer title={`Your answer to question ${n}`} value={clip} readOnly={locked} autoPlay={locked} target={t}
-                canDelete={e.allowRerecord} canReplace={e.allowRerecord} onChange={c => setAnswer(a.id, q.id, c)} />) : undefined} />
+              <AudioDrawer title={`Your answer to question ${n}`} value={clip} readOnly={locked} autoPlay={locked} target={t} onChange={c => setAnswer(a.id, q.id, c)} />) : undefined} />
           {/* The teacher's feedback on this answer, all in one place: the answer with its comments along it. */}
           {af && <Row label={<>Teacher comments{!af.dateSeen && <> <Badge color="blue">Unread</Badge></>}</>}
             onClick={() => go({ page: 'myFeedback', assignmentId: a.id, questionId: q.id })} />}

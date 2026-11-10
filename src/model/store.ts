@@ -99,7 +99,7 @@ export function createExercise(kind: ExerciseKind): string {
   const id = newId('e');
   mutate(d => {
     d.exercises.push({
-      id, kind, title: defaultTitle(kind), status: 'draft', allowRerecord: true, questionMode: 'read',
+      id, kind, title: defaultTitle(kind), status: 'draft', questionMode: 'read',
       dateCreated: today(), questions: [], material: EMPTY_MATERIAL[kind](),
     } as Exercise);
   });
@@ -351,5 +351,16 @@ export function markAnswerFeedbackSeen(assignmentId: string, questionId: string)
   mutate(d => {
     const af = d.feedback.find(x => x.assignmentId === assignmentId)?.answerFeedback[questionId];
     if (af) af.dateSeen = now();
+  });
+}
+
+/** Pause every assignment the student is working on (e.g. on sign out), so the clock doesn't keep running. */
+export function pauseAllFor(studentId: string) {
+  mutate(d => {
+    for (const a of d.assignments) {
+      if (a.studentId !== studentId || a.state !== 'active') continue;
+      stopClock(a);
+      a.state = 'paused';
+    }
   });
 }

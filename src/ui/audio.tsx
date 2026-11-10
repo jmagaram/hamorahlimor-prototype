@@ -17,7 +17,7 @@ type Mode = 'player' | 'ready' | 'recording' | 'confirmReplace' | 'confirmDelete
  * Each change calls `onChange` right away (on Stop, on Delete), so the closing button is Done.
  * The previous recording is kept until a new one is stopped, so cancelling a new take loses nothing.
  */
-export function AudioDrawer({ title, value, onChange, canDelete = true, canReplace = true, readOnly = false, autoPlay = false, target, children }: {
+export function AudioDrawer({ title, value, onChange, canDelete = true, readOnly = false, autoPlay = false, target, children }: {
   title: string;
   /** Shown above the player, e.g. the question's text. */
   children?: ReactNode;
@@ -25,8 +25,6 @@ export function AudioDrawer({ title, value, onChange, canDelete = true, canRepla
   onChange?: (clip: AudioClip | undefined) => void;
   /** False where a recording is required (e.g. Listen material). */
   canDelete?: boolean;
-  /** False for one take only: once recorded, no Record again. */
-  canReplace?: boolean;
   /** Seconds the answer should be about: shown while recording, with how far over. */
   target?: number;
   readOnly?: boolean;
@@ -83,7 +81,7 @@ export function AudioDrawer({ title, value, onChange, canDelete = true, canRepla
   return (
     <DrawerShell title={title} actions={!readOnly && <>
       {clip && canDelete && <button onClick={() => setMode('confirmDelete')}>Delete</button>}
-      {clip && canReplace && <button onClick={() => setMode('confirmReplace')}>Record again</button>}
+      {clip && <button onClick={() => setMode('confirmReplace')}>Record again</button>}
       <button onClick={close}>Done</button>
     </>}>
       {children}

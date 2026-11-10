@@ -50,7 +50,6 @@ export function ExerciseRow({ e, onClick }: { e: ExerciseT; onClick: () => void 
   const sub = [
     KINDS[e.kind].label,
     e.timeLimit ? `${e.timeLimit} min` : 'No time limit',
-    !e.allowRerecord && 'One take only',
     e.questionMode !== 'read' && `Questions: ${questionModeLabel(e.questionMode)}`,
     e.status === 'published' && (last ? `Assigned ${daysAgo(last)}` : 'Not assigned yet'),
   ].filter(Boolean).join(' · ');
@@ -110,11 +109,6 @@ export function Exercise({ id }: { id: string }) {
         <MenuDrawer<number | undefined> title="Time limit for the whole exercise"
           options={[{ label: 'No limit', value: undefined }, ...TIME_LIMITS.map(m => ({ label: `${m} min`, value: m }))]}
           onPick={v => updateDraft(id, x => { if (v) x.timeLimit = v; else delete x.timeLimit; })} />))} />
-      <Field label="Re-recording" value={e.allowRerecord ? 'Allowed' : 'One take only'} onClick={edit(() => drawer.open(
-        <MenuDrawer title="Re-recording" options={[
-          { label: 'Allowed', value: true, sub: 'Students can re-record an answer before submitting.' },
-          { label: 'One take only', value: false, sub: 'Like the real exam.' },
-        ]} onPick={v => updateDraft(id, x => { x.allowRerecord = v; })} />))} />
       <Field label="Questions are" value={questionModeLabel(e.questionMode)} onClick={() => drawer.open(
         <MenuDrawer<QuestionMode> title="How students get each question"
           note="You always see the text when grading. When students hear the questions, every question needs audio."
@@ -168,7 +162,6 @@ function LockedExercise({ e }: { e: ExerciseT }) {
       <p><small>Published exercises are locked. Duplicate it to make changes.</small></p>
       <Facts items={[
         ['Time limit', e.timeLimit ? `${e.timeLimit} min` : 'No limit'],
-        ['Re-recording', e.allowRerecord ? 'Allowed' : 'One take only'],
         ['Questions are', questionModeLabel(e.questionMode)],
       ]} />
 
