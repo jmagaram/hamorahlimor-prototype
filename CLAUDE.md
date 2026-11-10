@@ -2,7 +2,7 @@
 
 A web app for an English teacher in Israel. Students practice spoken English (modeled on the oral bagrut / COBE): they watch, read, or listen to material, then record spoken answers to questions. The teacher creates exercises, assigns them, and reviews answers with comments.
 
-Two users: **teacher** and **student**. This phase builds a **click-through prototype of the teacher experience only**.
+Two users: **teacher** and **student**. This phase builds a **click-through prototype of the teacher experience**, plus sign-in; the student side is next.
 
 ## Current phase: click-through prototype
 
@@ -43,7 +43,8 @@ Commands: `npm run dev`, `npm run build` (type-checks), `npm run lint`.
 
 Every page has the same frame:
 
-- **Header** (sticky): the trail *above* the current page. A line of small clickable crumbs for everything above the parent (e.g. `Home › Exercises ›`), then a Back button labeled with the parent (e.g. `‹ Climate change interview`). There is no separate Home button: the `Home` crumb (or `‹ Home`) goes home. No header on Home.
+- **Header** (sticky): the trail *above* the current page. A line of small clickable crumbs for everything above the parent (e.g. `Home › Exercises ›`), then a Back button labeled with the parent (e.g. `‹ Climate change interview`). There is no separate Home button: the `Home` crumb (or `‹ Home`) goes home. At the right of the top line, `Hi Justin` (first name); tapping it asks to sign out and shows the code needed to sign in again. On Home the header is only the greeting.
+- **Sign in**: when nobody is signed in, the whole app is the sign-in screen: one code field and a `Sign in` footer button. The code decides teacher or which student. The prototype adds links to sign in as the teacher or pick a student, for walking through it.
 - **Heading**: an `<h2>` at the top of the body says where you are and what you're doing. Each page chooses its own text: usually the page's title (`Aleph`), sometimes worded as a task (`Edit question 2`, `Feedback on Maya's answer`). The title (used in crumbs and Back) and the heading can differ; both live in `src/nav/titles.ts`.
 - **Body**: the page content.
 - **Footer** (fixed, optional): buttons within thumb reach. Each button is sized to its label, and leftover width is shared between them (`flex: 1 1 auto`). Disabled when the action can't apply. The footer holds actions on the page's thing (`Publish`, `Assign`, `Unassign`), never a way out: leaving is always Back or the crumbs, and pages that save as you go have no `Done`. Only editor pages, which hold unsaved input, have `Cancel` / `OK`.

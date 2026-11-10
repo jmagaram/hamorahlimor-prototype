@@ -10,6 +10,10 @@ erDiagram
   ASSIGNMENT ||--o{ ANSWER : has
   QUESTION ||--o{ ANSWER : "answered by"
   ASSIGNMENT ||--o| FEEDBACK : has
+  TEACHER {
+    string name
+    string securityCode
+  }
   STUDENT {
     string id PK
     string name
@@ -69,11 +73,16 @@ Types: `date` is a calendar day (`YYYY-MM-DD`). `timestamp` is a point in time (
 
 ## Entities
 
+### Teacher
+One for now (`Db.teacher`). Signs in with a code, like a student.
+
+- `name`, `securityCode`
+
 ### Student
 - `id`, `name`, `className?`, `securityCode`, `dateCreated`
 - `className`: optional free text that groups students (e.g. "Aleph"). There is no Class entity: the classes are the distinct values in use, and a class exists only while some student has it. When set, the value is trimmed, blank means no class, and a value that matches an existing class ignoring case takes that class's spelling. Renaming a class means changing it on each of its students.
 - `name`: required, and unique across all students (ignoring case and surrounding spaces).
-- `securityCode`: a short code, generated automatically, that the student signs in with. The teacher can show it or generate a new one. Codes are unique across all students; a generated code that collides is regenerated.
+- `securityCode`: a code like `AZ54-93GW` (8 characters without look-alikes such as 0/O and 1/I), generated automatically, that the student signs in with. Typed codes match ignoring case, spaces and dashes. The teacher can show it or generate a new one. Codes are unique across all students and the teacher; a generated code that collides is regenerated.
 
 ### Exercise
 The template. One structure for every kind: the material varies, and the questions work the same way.
@@ -158,4 +167,4 @@ assignments/{id}/feedback/main           overall, answerFeedback, status, dates
 - Copying the exercise title and student name onto assignments is safe because published exercises never change. (A student rename would need to update its assignments.)
 - Feedback is a separate record so security rules can let a student read it only when `status == published`.
 - Audio files go in Cloud Storage; records store the file paths.
-- Auth: anonymous Firebase auth plus student security codes (to be designed).
+- Auth: anonymous Firebase auth. Signing in with a code links the anonymous user to the teacher or one student; signing out drops that link, so the code is needed again.

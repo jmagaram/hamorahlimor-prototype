@@ -125,3 +125,11 @@ Why things are the way they are. Newest first. Each entry: the decision, why, an
 **Why.** Nested status headings (an h4 per status under "Assigned to") were busy to look at, and a row meant nothing without its heading. Badges make each row self-explaining and easy to scan by color; the sort order keeps "what needs me" at the top, which was the headings' real value.
 
 **Later.** Assignments will grow to hundreds of mostly Done rows. Add a filter (Needs review · Not done · All, default Not done) when that matters.
+
+## Sign in with a code; it's also how the prototype switches sides (2026-11-10)
+
+**Decision.** Everyone signs in with a code: the teacher's or a student's. No signed-in user means the whole app is the sign-in screen. The header's top line says `Hi Noa`; tapping it confirms signing out and shows the code needed to get back in. Codes are 8 characters (`AZ54-93GW`). The prototype keeps the session in localStorage (so a reload keeps you signed in while the data resets) and adds "sign in as Teacher · Student" links.
+
+**Why.** The real app uses Firebase anonymous auth with a code tying the anonymous user to a person, so this is the real flow, and it doubles as the way to switch between teacher and student while walking through the prototype. Showing the code on sign-out avoids students locking themselves out. 4-character codes were too easy to guess.
+
+**Open.** The teacher is a single record for now; several teachers (or schools) would need a Teacher entity with ids and ownership of students and exercises.
