@@ -1,6 +1,6 @@
 import { useEffect, useReducer } from 'react';
 import { answerFor, clipRange, feedbackFor, KINDS, MATERIAL_HEADING, timeTaken } from '../model/derived';
-import { formatTimestamp, friendlyDay, minutes, mmss } from '../model/format';
+import { formatTimestamp, friendlyDay, mmss } from '../model/format';
 import { markFeedbackSeen, pauseAssignment, setAnswer, startAssignment, submitAssignment, useDb } from '../model/store';
 import { back, go } from '../nav/nav';
 import type { Assignment, Comment, Exercise, Feedback } from '../model/types';
@@ -11,6 +11,7 @@ import { useDrawer } from '../ui/drawerContext';
 import { CommentView } from '../ui/FeedbackRows';
 import { Footer } from '../ui/Footer';
 import { PLAY, useTicker } from '../ui/media';
+import { AnswerValue, MaterialRow, QuestionRow } from '../ui/assignmentParts';
 import { Facts, Field, Row } from '../ui/rows';
 import { NotFound } from './NotFound';
 
@@ -52,6 +53,7 @@ function Summary({ a, e }: { a: Assignment; e: Exercise }) {
         ['Time limit', e.timeLimit ? `${e.timeLimit} min` : 'None'],
         ['Time used', a.dateStarted && `${mmss(timeTaken(a))}${limit ? ` of ${mmss(limit)}` : ''}`],
       ]} />
+      <Material e={e} />
       {limit && !a.dateStarted && <p><small>The clock starts when you tap Start. You can pause it, and keep going past the time limit if you need to.</small></p>}
       <Footer buttons={[{ label: a.dateStarted ? 'Resume' : 'Start', onClick: () => startAssignment(a.id) }]} />
     </>
@@ -70,7 +72,7 @@ function Working({ a, e }: { a: Assignment; e: Exercise }) {
 
   return (
     <>
-      <Material e={e} />
+      <Material e={e} working />
       <Questions a={a} e={e} canRecord />
       <Footer buttons={[
         { label: 'Pause', onClick: () => { pauseAssignment(a.id); back(); } },
@@ -113,10 +115,10 @@ function Submitted({ a, e }: { a: Assignment; e: Exercise }) {
     <>
       <Facts items={[
         ['Submitted', a.dateSubmitted && friendlyDay(formatTimestamp(a.dateSubmitted))],
-        ['Time taken', mmss(a.secondsTaken)],
+        ['Time taken', mmss(a.secondsTaken) + (e.timeLimit ? ` of ${mmss(e.timeLimit * 60)}` : '')],
       ]} />
       {!published && <p>Waiting for feedback from your teacher.</p>}
-      <Material e={e} collapsed />
+      <Material e={e} />
       <Questions a={a} e={e} feedback={published} />
       {published && hasContent(published.overall) && <>
         <h3>Overall feedback</h3>
@@ -128,13 +130,16 @@ function Submitted({ a, e }: { a: Assignment; e: Exercise }) {
 
 const hasContent = (c: Comment) => !!(c.text || c.audio);
 
-/** The exercise's material: a video to open, audio to play, or the text itself. */
-function Material({ e, collapsed = false }: { e: Exercise; collapsed?: boolean }) {
+/**
+ * The exercise's material under its heading, as one row like the teacher sees it. While working,
+ * a video gets a large placeholder and a text is shown whole, since that's what the student is doing.
+ */
+function Material({ e, working = false }: { e: Exercise; working?: boolean }) {
   const drawer = useDrawer();
   if (e.kind === 'speaking') return null;
   return <>
     <h3>{MATERIAL_HEADING[e.kind]}</h3>
-    {e.kind === 'video' && (
+    {working && e.kind === 'video' ? (
       <div className="thumb" role="button" tabIndex={0} onClick={() => drawer.open(
         <DrawerShell title="Video to watch">
           <p>Watch {clipRange(e.material)} of <a href={e.material.url} target="_blank" rel="noreferrer">this video</a>.</p>
@@ -142,16 +147,9 @@ function Material({ e, collapsed = false }: { e: Exercise; collapsed?: boolean }
         <span className="thumb-play">{PLAY}</span>
         <small>Watch {clipRange(e.material)}</small>
       </div>
-    )}
-    {e.kind === 'listen' && e.material.audio && (
-      <Field label="Recording" value={`${PLAY} ${mmss(e.material.audio.duration)}`} onClick={() => drawer.open(
-        <AudioDrawer title="Audio to listen to" value={e.material.audio} readOnly autoPlay />)} />
-    )}
-    {e.kind === 'read' && (collapsed
-      // Done: a few lines, tap for the whole text, so the answers and comments stay near the top.
-      ? <Field label="Text" value={<span className="clamp3">{e.material.text}</span>} onClick={() => drawer.open(
-        <DrawerShell title="Text to read"><p style={{ whiteSpace: 'pre-wrap' }}>{e.material.text}</p></DrawerShell>)} />
-      : <p style={{ whiteSpace: 'pre-wrap' }}>{e.material.text}</p>)}
+    ) : working && e.kind === 'read'
+      ? <p style={{ whiteSpace: 'pre-wrap' }}>{e.material.text}</p>
+      : <MaterialRow e={e} />}
   </>;
 }
 
@@ -159,8 +157,6 @@ function Material({ e, collapsed = false }: { e: Exercise; collapsed?: boolean }
 function Questions({ a, e, canRecord = false, feedback }: { a: Assignment; e: Exercise; canRecord?: boolean; feedback?: Feedback }) {
   const db = useDb();
   const drawer = useDrawer();
-  const read = e.questionMode !== 'hear';
-  const hear = e.questionMode !== 'read';
   return <>
     {e.questions.map((q, i) => {
       const n = i + 1;
@@ -172,14 +168,8 @@ function Questions({ a, e, canRecord = false, feedback }: { a: Assignment; e: Ex
       return (
         <section key={q.id}>
           <h3>Question {n}</h3>
-          {read && <p>{q.promptText}</p>}
-          {hear && q.promptAudio && (
-            <Field label={read ? 'Hear the question' : 'The question'} value={`${PLAY} ${mmss(q.promptAudio.duration)}`}
-              onClick={() => drawer.open(<AudioDrawer title={`Question ${n}`} value={q.promptAudio} readOnly autoPlay />)} />
-          )}
-          <Field label="Your answer" value={clip
-            ? <>Recorded · {mmss(clip.duration)}{t && <> (target {minutes(t)})</>}{t && clip.duration > t && <> <Badge color="amber">Over target</Badge></>}</>
-            : <>Not recorded yet{t && <> (target {minutes(t)})</>}</>}
+          <QuestionRow e={e} q={q} n={n} forStudent />
+          <Field label="Your answer" value={<AnswerValue duration={clip?.duration} target={t} none="Not recorded yet" />}
             onClick={clip || canRecord ? () => drawer.open(
               <AudioDrawer title={`Your answer to question ${n}`} value={clip} readOnly={locked} autoPlay={locked} target={t} onChange={c => setAnswer(a.id, q.id, c)} />) : undefined} />
           {/* The teacher's feedback on this answer, all in one place: the answer with its comments along it. */}
