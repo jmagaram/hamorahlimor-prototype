@@ -1,4 +1,4 @@
-import { feedbackFor, isOpen, isOverdue } from '../model/derived';
+import { feedbackFor, isOpen, isOverdue, KINDS } from '../model/derived';
 import { dueText, formatTimestamp, friendlyDayInline, today } from '../model/format';
 import { useSession } from '../model/session';
 import { useDb } from '../model/store';
@@ -18,6 +18,7 @@ export function StudentHome() {
   const t = today();
   const mine = db.assignments.filter(a => a.studentId === studentId);
   const title = (a: Assignment) => db.exercises.find(e => e.id === a.exerciseId)?.title;
+  const kind = (a: Assignment) => { const e = db.exercises.find(x => x.id === a.exerciseId); return e ? KINDS[e.kind].label : ''; };
   const toDo = mine.filter(isOpen)
     .sort((x, y) => (x.dueDate ?? '9999').localeCompare(y.dueDate ?? '9999') || x.dateAssigned.localeCompare(y.dateAssigned));
   const done = mine.filter(a => !isOpen(a))
@@ -31,7 +32,7 @@ export function StudentHome() {
           {isOverdue(a, t) && <><Badge color="red">Overdue</Badge> </>}
           {a.state === 'active' && <><Badge color="blue">In progress</Badge> </>}
           {a.state === 'paused' && <><Badge>Paused</Badge> </>}
-          {dueText(a.dueDate) || 'No due date'}
+          {kind(a)} · {dueText(a.dueDate) || 'no due date'}
         </>} />
       )) : <Empty>Nothing to do right now.</Empty>}
 
@@ -41,9 +42,9 @@ export function StudentHome() {
         const submitted = a.dateSubmitted ? `submitted ${friendlyDayInline(formatTimestamp(a.dateSubmitted))}` : '';
         return (
           <Row key={a.id} label={title(a)} onClick={() => go({ page: 'work', id: a.id })} sub={
-            f?.status !== 'published' ? `Waiting for feedback · ${submitted}`
-              : !f.dateSeen ? <><Badge color="blue">New feedback</Badge> {submitted}</>
-                : submitted.replace(/^s/, 'S')
+            f?.status !== 'published' ? `${kind(a)} · waiting for feedback · ${submitted}`
+              : !f.dateSeen ? <><Badge color="blue">New feedback</Badge> {kind(a)} · {submitted}</>
+                : `${kind(a)} · ${submitted}`
           } />
         );
       }) : <Empty>Nothing yet.</Empty>}

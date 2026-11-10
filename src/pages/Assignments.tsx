@@ -1,16 +1,16 @@
-import { answerFeedbackSummary, commentSummary, answerFor, audioSummary, hasQuestionAudio, clipRange, clipSummary, feedbackFor, materialSummary, MATERIAL_HEADING, timeTaken } from '../model/derived';
-import { daysBetween, friendlyDay, formatTimestamp, minutes, mmss } from '../model/format';
+import { answerFeedbackSummary, commentSummary, answerFor, feedbackFor, MATERIAL_HEADING, timeTaken } from '../model/derived';
+import { daysBetween, friendlyDay, formatTimestamp, mmss } from '../model/format';
 import { publishFeedback, setDueDate, unassign, useDb } from '../model/store';
-import type { Assignment as AssignmentT, Exercise as ExerciseT } from '../model/types';
+import type { Assignment as AssignmentT } from '../model/types';
 import { back, go, linkTo } from '../nav/nav';
 import { AudioDrawer } from '../ui/audio';
-import { PLAY } from '../ui/media';
 import { Badge } from '../ui/Badge';
 import { ConfirmDrawer, DrawerShell } from '../ui/Drawer';
 import { DueDateDrawer } from '../ui/DueDateDrawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer, type FooterButton } from '../ui/Footer';
 import { AssignmentList } from '../ui/AssignmentList';
+import { AnswerValue, MaterialRow, QuestionRow } from '../ui/assignmentParts';
 import { Facts, Field } from '../ui/rows';
 import { SelectAllBar } from '../ui/selection';
 import { useSelection } from '../ui/useSelection';
@@ -51,20 +51,6 @@ function Lateness({ a }: { a: AssignmentT }) {
   return late > 0
     ? <Badge color="amber">{late === 1 ? '1 day late' : `${late} days late`}</Badge>
     : <Badge color="green">On time</Badge>;
-}
-
-/** The exercise's material, so the teacher can check what the student responded to. Opens play-only. */
-function MaterialRow({ e }: { e: ExerciseT }) {
-  const drawer = useDrawer();
-  if (e.kind === 'video') return <Field label="Video" value={clipSummary(e.material)} onClick={() => drawer.open(
-    <DrawerShell title="Video to watch">
-      <p>Students watch {clipRange(e.material)} of <a href={e.material.url} target="_blank" rel="noreferrer">this video</a>.</p>
-    </DrawerShell>)} />;
-  if (e.kind === 'listen') return <Field label="Audio" value={audioSummary(e.material.audio)} onClick={e.material.audio && (() => drawer.open(
-    <AudioDrawer title="Audio to listen to" value={e.material.audio} readOnly autoPlay />))} />;
-  if (e.kind === 'read') return <Field label="Text" value={materialSummary(e)} onClick={() => drawer.open(
-    <DrawerShell title="Text to read"><p style={{ whiteSpace: 'pre-wrap' }}>{e.material.text}</p></DrawerShell>)} />;
-  return null;
 }
 
 export function Assignment({ id }: { id: string }) {
@@ -119,21 +105,12 @@ export function Assignment({ id }: { id: string }) {
       {e.questions.map((q, i) => {
         const answer = answerFor(db, id, q.id);
         const n = i + 1;
-        const audio = hasQuestionAudio(e) ? q.promptAudio : undefined;
         const t = q.targetSeconds;
         return (
           <section key={q.id}>
             <h3>Question {n}</h3>
-            <Field label="Question" value={<>
-              {q.promptText || 'Audio only'}
-              {audio && <><br /><small>{PLAY} Audio {mmss(audio.duration)}</small></>}
-            </>} onClick={audio && (() => drawer.open(
-              <AudioDrawer title={`Question ${n}`} value={audio} readOnly autoPlay>
-                {q.promptText && <p>{q.promptText}</p>}
-              </AudioDrawer>))} />
-            <Field label={`${first}'s answer`} value={answer
-              ? <>{PLAY} {mmss(answer.duration)}{t ? ` / target ${minutes(t)}` : ''}{t && answer.duration > t && <> <Badge color="amber">Over target</Badge></>}</>
-              : 'No answer yet'}
+            <QuestionRow e={e} q={q} n={n} />
+            <Field label={`${first}'s answer`} value={<AnswerValue duration={answer?.duration} target={t} none="No answer yet" />}
               onClick={answer && (() => drawer.open(
                 <AudioDrawer title={`${first}'s answer to question ${n}`} value={{ path: answer.recording, duration: answer.duration }} readOnly autoPlay />))} />
             {submitted && answer && <Field label="Your feedback" value={answerFeedbackSummary(f?.answerFeedback[q.id])}
