@@ -47,17 +47,20 @@ export function dayLabel(date: DateString): string {
   return `${WEEKDAYS[new Date(y, m - 1, d).getDay()]} ${d}-${MONTHS[m - 1]}`;
 }
 
-/** "Today, Mon 9-Nov", "Tomorrow, Tue 10-Nov", "Yesterday, Sun 8-Nov", otherwise "Wed 11-Nov". */
-export function friendlyDay(date: DateString): string {
+/**
+ * "Today", "Tomorrow", "Yesterday", otherwise "Wed 11-Nov" (day before month, as read in Israel; no year).
+ * withDate keeps the date after the word ("Tomorrow, Wed 11-Nov"), for picking a day.
+ */
+export function friendlyDay(date: DateString, withDate = false): string {
   const t = today();
   const near = date === t ? 'Today' : date === addDays(t, 1) ? 'Tomorrow' : date === addDays(t, -1) ? 'Yesterday' : '';
-  return near ? `${near}, ${dayLabel(date)}` : dayLabel(date);
+  return !near ? dayLabel(date) : withDate ? `${near}, ${dayLabel(date)}` : near;
 }
 
-/** "due today, Mon 9-Nov", "due Wed 11-Nov", or "" with no due date (for lines under a row). */
-/** friendlyDay for the middle of a sentence: "today, Mon 9-Nov", "Wed 11-Nov" (weekdays stay capitalized). */
+/** friendlyDay for the middle of a sentence: "today", "Wed 11-Nov" (weekdays stay capitalized). */
 export const friendlyDayInline = (date: DateString) => friendlyDay(date).replace(/^(Today|Tomorrow|Yesterday)/, w => w.toLowerCase());
 
+/** "due today", "due Wed 11-Nov", or "" with no due date (for lines under a row). */
 export const dueText = (dueDate: DateString | undefined) => (dueDate ? `due ${friendlyDayInline(dueDate)}` : '');
 
 /** "today", "yesterday", "21 days ago". */

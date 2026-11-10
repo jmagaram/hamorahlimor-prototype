@@ -18,7 +18,7 @@ export function DueDateDrawer({ title = 'Due date', onPick }: {
   const t = today();
   const days = [0, 1, 2, 3, 4].map(n => {
     const d = addDays(t, n);
-    return { d, label: friendlyDay(d) };
+    return { d, label: friendlyDay(d, true) };
   });
   // Open the browser's calendar on the hidden date input next to the menu.
   const other = (ev: MouseEvent) => {
