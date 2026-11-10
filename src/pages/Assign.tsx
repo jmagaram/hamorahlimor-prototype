@@ -1,4 +1,4 @@
-import { isOpen, lastSubmitted, studentGroups } from '../model/derived';
+import { filterExercises, isOpen, lastSubmitted, studentGroups, type ExerciseShow } from '../model/derived';
 import { formatTimestamp, friendlyDay } from '../model/format';
 import { assign, useDb } from '../model/store';
 import { back, backWith, go, linkTo } from '../nav/nav';
@@ -9,7 +9,7 @@ import { DueDateDrawer } from '../ui/DueDateDrawer';
 import { ExerciseCard } from '../ui/ExerciseCard';
 import { Footer } from '../ui/Footer';
 import { ActionLink, Empty, Field } from '../ui/rows';
-import { ExerciseRow, NewExerciseDrawer } from './Exercises';
+import { ExerciseFilters, ExerciseRow, NewExerciseDrawer } from './Exercises';
 
 /**
  * Give one exercise to some students. Where you came from can preset the exercise (from an exercise)
@@ -85,18 +85,16 @@ export function Assign({ exerciseId: presetExercise, studentId }: { exerciseId?:
 export function ChooseExercise() {
   const db = useDb();
   const drawer = useDrawer();
-  const [filter, setFilter] = usePageState('filter', '');
-  const f = filter.trim().toLowerCase();
-  const list = db.exercises
-    .filter(e => e.status === 'published' && e.title.toLowerCase().includes(f))
-    .sort((a, b) => b.dateCreated.localeCompare(a.dateCreated));
+  const [search, setSearch] = usePageState('search', '');
+  const [show, setShow] = usePageState<ExerciseShow>('show', 'all');
+  const published = db.exercises.filter(e => e.status === 'published');
+  const list = filterExercises(db, published, search, show);
   return (
     <>
-      <input className="wide" type="search" placeholder="Filter by title" aria-label="Filter by title"
-        value={filter} onChange={ev => setFilter(ev.target.value)} />
+      <ExerciseFilters search={search} setSearch={setSearch} show={show} setShow={setShow} />
       {list.length
         ? list.map(e => <ExerciseRow key={e.id} e={e} onClick={() => backWith('exerciseId', e.id)} />)
-        : <Empty>{f ? 'No published exercise matches.' : 'No published exercises yet.'}</Empty>}
+        : <Empty>{published.length ? 'No published exercise matches.' : 'No published exercises yet.'}</Empty>}
       <p><small>Only published exercises are listed. Drafts are in Exercises.</small></p>
       <ActionLink onClick={() => drawer.open(<NewExerciseDrawer />)}>New exercise</ActionLink>
     </>

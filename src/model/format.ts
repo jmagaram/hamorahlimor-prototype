@@ -60,6 +60,12 @@ export const friendlyDayInline = (date: DateString) => friendlyDay(date).replace
 
 export const dueText = (dueDate: DateString | undefined) => (dueDate ? `due ${friendlyDayInline(dueDate)}` : '');
 
+/** "today", "yesterday", "21 days ago". */
+export function daysAgo(date: DateString): string {
+  const n = daysBetween(date, today());
+  return n <= 0 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`;
+}
+
 /** Whole days from one calendar day to another (negative if `to` is earlier). */
 export function daysBetween(from: DateString, to: DateString): number {
   const [y1, m1, d1] = from.split('-').map(Number);
