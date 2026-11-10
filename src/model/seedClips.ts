@@ -205,8 +205,8 @@ const day = (n: number) => new Date(Date.UTC(2026, 8, 1 + n)).toISOString().slic
 
 export const clipExercises = (): Exercise[] => CLIPS.map(([title, url, start, end, questions], i) => ({
   id: `v${i + 1}`, title, kind: 'video', status: url ? 'published' : 'draft',
-  // Made up: a mix of time limits (some short enough for class), and a few first-take-only.
-  timeLimit: [10, 5, 15, 3, 10, 5][i % 6], allowRerecord: i % 7 !== 3, questionMode: 'read', dateCreated: day(i * 2),
+  // Made up: a mix of time limits (some short enough for class).
+  timeLimit: [10, 5, 15, 3, 10, 5][i % 6], questionMode: 'read', dateCreated: day(i * 2),
   material: { url: url ?? '', ...(start && { start }), ...(end && { end }) },
   // The last question asks for opinion and examples: a longer target.
   questions: questions.map((promptText, j) => ({

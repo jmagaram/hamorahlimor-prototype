@@ -75,7 +75,6 @@ interface ExerciseFields {
   status: ExerciseStatus;
   /** Minutes, for the whole exercise. */
   timeLimit?: number;
-  allowRerecord: boolean;
   /** How students get each question: read its text, hear its audio, or both. The teacher always sees the text. */
   questionMode: QuestionMode;
   dateCreated: DateString;

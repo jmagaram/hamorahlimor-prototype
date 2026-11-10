@@ -19,7 +19,7 @@ export function seed(): Db {
     exercises: [
       {
         id: 'e1', title: 'Climate change interview', kind: 'video', status: 'published',
-        timeLimit: 15, allowRerecord: true, questionMode: 'readAndHear', dateCreated: '2026-10-01',
+        timeLimit: 15, questionMode: 'readAndHear', dateCreated: '2026-10-01',
         material: { url: 'https://www.youtube.com/watch?v=abc123', start: '1:05', end: '3:20' },
         questions: [
           { id: 'q1', promptText: 'What is the main problem the speaker describes?', promptAudio: { path: 'fake-audio/q1.webm', duration: 7 }, targetSeconds: 60 },
@@ -29,7 +29,7 @@ export function seed(): Db {
       },
       {
         id: 'e2', title: 'My project', kind: 'speaking', status: 'published',
-        allowRerecord: false, questionMode: 'read', dateCreated: '2026-10-12', material: {},
+        questionMode: 'read', dateCreated: '2026-10-12', material: {},
         questions: [
           { id: 'q4', promptText: 'What is your project about?', targetSeconds: 60 },
           { id: 'q5', promptText: 'How did the project influence you?', targetSeconds: 120 },
@@ -37,13 +37,13 @@ export function seed(): Db {
       },
       {
         id: 'e3', title: 'Weekend plans', kind: 'listen', status: 'draft',
-        timeLimit: 10, allowRerecord: true, questionMode: 'read', dateCreated: '2026-11-05',
+        timeLimit: 10, questionMode: 'read', dateCreated: '2026-11-05',
         material: { audio: { path: 'fake-audio/e3.webm', duration: 95 } },
         questions: [{ id: 'q6', promptText: 'Where is the speaker going this weekend?', targetSeconds: 60 }],
       },
       {
         id: 'e4', title: 'A letter from camp', kind: 'read', status: 'draft',
-        allowRerecord: true, questionMode: 'read', dateCreated: '2026-11-08',
+        questionMode: 'read', dateCreated: '2026-11-08',
         material: { text: 'Dear Mom and Dad,\nCamp is great so far. On the first day we...' },
         questions: [],
       },

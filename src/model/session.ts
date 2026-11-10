@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { getDb } from './store';
+import { getDb, pauseAllFor } from './store';
 
 // Who is signed in. The real app: Firebase anonymous auth, plus a security code that ties the
 // anonymous user to the teacher or one student. Here the session is kept in localStorage so a
@@ -49,4 +49,8 @@ export function signIn(code: string): boolean {
   return false;
 }
 
-export const signOut = () => set(null);
+/** Signing out pauses whatever the student was working on: leaving without Pause mustn't leave the clock running. */
+export function signOut() {
+  if (session?.role === 'student') pauseAllFor(session.studentId);
+  set(null);
+}
