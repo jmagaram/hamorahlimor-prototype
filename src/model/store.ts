@@ -180,10 +180,11 @@ export function deleteQuestion(exerciseId: string, questionId: string) {
 
 /* ---------- assignments ---------- */
 
+/** Skips a student who still has an open (unsubmitted) assignment of this exercise. Once submitted, it can be assigned again. */
 export function assign(studentIds: Iterable<string>, exerciseId: string, dueDate: string | undefined) {
   mutate(d => {
     for (const studentId of studentIds) {
-      if (d.assignments.some(a => a.studentId === studentId && a.exerciseId === exerciseId)) continue;
+      if (d.assignments.some(a => a.studentId === studentId && a.exerciseId === exerciseId && a.state !== 'submitted')) continue;
       d.assignments.push({
         id: newId('a'), studentId, exerciseId, dateAssigned: today(), ...(dueDate && { dueDate }),
         state: 'notStarted', secondsTaken: 0,

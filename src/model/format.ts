@@ -25,11 +25,21 @@ export function mmss(seconds: number | undefined): string {
   return `${Math.floor(s / 60)}:${pad(s % 60)}`;
 }
 
-/** "2 min" for whole minutes, otherwise "1:30". */
-export const minutes = (seconds: number) => (seconds % 60 ? mmss(seconds) : `${seconds / 60} min`);
+/** A rounded length: "30 sec", "2 min", "1½ min", otherwise "1:20". */
+export const minutes = (seconds: number) =>
+  seconds < 60 ? `${seconds} sec`
+    : seconds % 60 === 0 ? `${seconds / 60} min`
+      : seconds % 60 === 30 ? `${Math.floor(seconds / 60)}½ min`
+        : mmss(seconds);
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "4-Nov", for short labels. */
+export function shortDay(date: DateString): string {
+  const [, m, d] = date.split('-').map(Number);
+  return `${d}-${MONTHS[m - 1]}`;
+}
 
 /** "Tue 4-Nov". */
 export function dayLabel(date: DateString): string {

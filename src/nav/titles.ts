@@ -1,4 +1,4 @@
-import { displayStatus, EXERCISE_STATUS_COLOR, isOverdue, KINDS, STATUS_COLOR, type BadgeColor } from '../model/derived';
+import { displayStatus, EXERCISE_STATUS_COLOR, isOverdue, KINDS, repeatSuffix, STATUS_COLOR, type BadgeColor } from '../model/derived';
 import { today } from '../model/format';
 import type { Db } from '../model/types';
 import type { Route } from './nav';
@@ -28,8 +28,9 @@ export function routeTitle(db: Db, r: Route): string {
       if (!a) return NOT_FOUND;
       const s = db.students.find(x => x.id === a.studentId);
       const e = db.exercises.find(x => x.id === a.exerciseId);
-      return `${s?.name} · ${e?.title}`;
+      return `${s?.name} · ${e?.title}${repeatSuffix(db, a)}`;
     }
+    case 'overallFeedback': return 'Overall feedback';
     case 'answerFeedback': {
       const a = db.assignments.find(x => x.id === r.assignmentId);
       const i = db.exercises.find(x => x.id === a?.exerciseId)?.questions.findIndex(q => q.id === r.questionId) ?? -1;
@@ -48,6 +49,11 @@ export function routeHeading(db: Db, r: Route): string {
       const a = db.assignments.find(x => x.id === r.assignmentId);
       const name = db.students.find(s => s.id === a?.studentId)?.name.split(' ')[0];
       return `Feedback on ${name}'s answer`;
+    }
+    case 'overallFeedback': {
+      const a = db.assignments.find(x => x.id === r.assignmentId);
+      const name = db.students.find(s => s.id === a?.studentId)?.name.split(' ')[0];
+      return `Overall feedback for ${name}`;
     }
     default: return title;
   }

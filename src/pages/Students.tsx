@@ -104,12 +104,15 @@ export function Student({ id }: { id: string }) {
 
 function SecurityCodeDrawer({ id }: { id: string }) {
   const s = useDb().students.find(x => x.id === id);
+  const { close } = useDrawer();
   if (!s) return null;
   return (
-    <DrawerShell title="Security code">
+    <DrawerShell title="Security code" actions={<>
+      <button onClick={() => regenerateSecurityCode(id)}>Generate new code</button>
+      <button onClick={close}>Done</button>
+    </>}>
       <p style={{ fontSize: 36, letterSpacing: 6, margin: '8px 0' }}><b>{s.securityCode}</b></p>
       <p><small>{s.name} signs in with this code.</small></p>
-      <button onClick={() => regenerateSecurityCode(id)}>Generate new code</button>
     </DrawerShell>
   );
 }

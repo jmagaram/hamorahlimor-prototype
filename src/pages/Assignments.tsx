@@ -1,4 +1,4 @@
-import { answerFeedbackSummary, answerFor, audioSummary, hasQuestionAudio, clipRange, clipSummary, feedbackFor, groupedOrder, materialSummary, MATERIAL_HEADING, timeTaken } from '../model/derived';
+import { answerFeedbackSummary, commentSummary, answerFor, audioSummary, hasQuestionAudio, clipRange, clipSummary, feedbackFor, groupedOrder, materialSummary, MATERIAL_HEADING, timeTaken } from '../model/derived';
 import { daysBetween, dueText, friendlyDay, formatTimestamp, minutes, mmss } from '../model/format';
 import { publishFeedback, setDueDate, unassign, useDb } from '../model/store';
 import type { Assignment as AssignmentT, Exercise as ExerciseT } from '../model/types';
@@ -11,7 +11,6 @@ import { DueDateDrawer } from '../ui/DueDateDrawer';
 import { useDrawer } from '../ui/drawerContext';
 import { Footer, type FooterButton } from '../ui/Footer';
 import { GroupedAssignments } from '../ui/GroupedAssignments';
-import { FeedbackRows } from '../ui/FeedbackRows';
 import { Facts, Field } from '../ui/rows';
 import { SelectAllBar } from '../ui/selection';
 import { useSelection } from '../ui/useSelection';
@@ -145,7 +144,8 @@ export function Assignment({ id }: { id: string }) {
 
       {submitted && <section>
         <h3>Overall feedback</h3>
-        <FeedbackRows assignmentId={id} place="overall" c={f?.overall ?? {}} what="the whole exercise" />
+        <Field label="Your feedback" value={commentSummary(f?.overall)}
+          onClick={() => go({ page: 'overallFeedback', assignmentId: id })} />
       </section>}
 
       <Footer buttons={footer} />

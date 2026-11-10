@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { DISPLAY_STATUSES, displayStatus, isOverdue } from '../model/derived';
+import { DISPLAY_STATUSES, displayStatus, isOverdue, repeatSuffix } from '../model/derived';
 import { today } from '../model/format';
 import { useDb } from '../model/store';
 import type { Assignment } from '../model/types';
@@ -31,7 +31,7 @@ export function GroupedAssignments({ assignments, label, sub, sel, nested }: {
             {nested ? <h4>{status}</h4> : <h3>{status}</h3>}
             {xs.map(a => (
               <SelectableRow key={a.id} sel={sel} id={a.id} sub={sub(a)}
-                label={isOverdue(a, t) ? <>{label(a)} <Badge color="red">Overdue</Badge></> : label(a)}
+                label={<>{label(a)}{repeatSuffix(db, a)}{isOverdue(a, t) && <> <Badge color="red">Overdue</Badge></>}</>}
                 onClick={linkTo({ page: 'assignment', id: a.id })} />
             ))}
           </section>

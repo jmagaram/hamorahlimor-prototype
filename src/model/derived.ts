@@ -1,5 +1,5 @@
-import { mmss } from './format';
-import type { Answer, AnswerFeedback, Assignment, Db, Exercise, ExerciseKind, Feedback, Question, QuestionMode, Student } from './types';
+import { mmss, shortDay } from './format';
+import type { Answer, AnswerFeedback, Assignment, Comment, Db, Exercise, ExerciseKind, Feedback, Question, QuestionMode, Student } from './types';
 
 /** `kicker` is the small line above an exercise's heading that says what kind it is. */
 export const KINDS: Record<ExerciseKind, { label: string; description: string; kicker: string }> = {
@@ -37,6 +37,7 @@ export function timeTaken(a: Assignment, nowMs = Date.now()): number {
   return a.secondsTaken + Math.max(0, running);
 }
 
+/** Not submitted yet: the student's part isn't done. At most one open assignment per student + exercise (a UI rule). */
 export const isOpen = (a: Assignment) => a.state !== 'submitted';
 
 
@@ -206,4 +207,25 @@ export function answerFeedbackSummary(af: AnswerFeedback | undefined): string {
   if (af.comments.length) parts.push(`${af.comments.length === 1 ? 'Comment' : 'Comments'} at ${af.comments.map(c => mmss(c.atSeconds)).join(', ')}`);
   if (af.overall.text || af.overall.audio) parts.push('Overall comment');
   return parts.join(' · ') || 'None yet';
+}
+
+/** One line about an untimed comment: "Audio 0:22 · Written", or "None yet". */
+export function commentSummary(c: Comment | undefined): string {
+  return [c?.audio && `Audio ${mmss(c.audio.duration)}`, c?.text && 'Written'].filter(Boolean).join(' · ') || 'None yet';
+}
+
+/**
+ * " · 10-Nov" (the assigned day) when the student has had this exercise more than once, so repeats
+ * can be told apart in titles and rows; otherwise "".
+ */
+export function repeatSuffix(db: Db, a: Assignment): string {
+  const n = db.assignments.filter(x => x.studentId === a.studentId && x.exerciseId === a.exerciseId).length;
+  return n > 1 ? ` · ${shortDay(a.dateAssigned)}` : '';
+}
+
+/** The student's latest submitted assignment of the exercise, if any. */
+export function lastSubmitted(db: Db, studentId: string, exerciseId: string): Assignment | undefined {
+  return db.assignments
+    .filter(a => a.studentId === studentId && a.exerciseId === exerciseId && a.dateSubmitted)
+    .sort((x, y) => (y.dateSubmitted ?? '').localeCompare(x.dateSubmitted ?? ''))[0];
 }
