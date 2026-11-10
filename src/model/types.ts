@@ -148,6 +148,8 @@ export interface Feedback {
   status: FeedbackStatus;
   dateStarted: Timestamp;
   datePublished?: Timestamp;
+  /** When the student first opened it after it was published. Absent: new to the student. */
+  dateSeen?: Timestamp;
 }
 
 /** The whole in-memory database. */

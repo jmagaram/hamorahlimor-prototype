@@ -86,7 +86,7 @@ export function seed(): Db {
           },
           q3: { comments: [], overall: { audio: { path: 'fake-audio/fb-a3-q3.webm', duration: 22 } } },
         },
-        status: 'published', dateStarted: '2026-11-03T09:00:00Z', datePublished: '2026-11-03T09:20:00Z',
+        status: 'published', dateStarted: '2026-11-03T09:00:00Z', datePublished: '2026-11-03T09:20:00Z', dateSeen: '2026-11-03T18:00:00Z',
       },
       {
         assignmentId: 'a4',

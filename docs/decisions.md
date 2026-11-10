@@ -133,3 +133,11 @@ Why things are the way they are. Newest first. Each entry: the decision, why, an
 **Why.** The real app uses Firebase anonymous auth with a code tying the anonymous user to a person, so this is the real flow, and it doubles as the way to switch between teacher and student while walking through the prototype. Showing the code on sign-out avoids students locking themselves out. 4-character codes were too easy to guess.
 
 **Open.** The teacher is a single record for now; several teachers (or schools) would need a Teacher entity with ids and ownership of students and exercises.
+
+## Student side: soft time limit, feedback under each answer (2026-11-10)
+
+**Decision.** An exercise's time limit is a guide, not a cutoff: the student sees `0:54 of 5:00` in the small line above the title, and past the limit `0:10 over`; nothing stops or submits. While working there's no Back button (Pause or Submit, both back to Home) and no Overdue badge. On a submitted assignment the teacher's feedback sits right under each answer, with only the overall feedback at the end.
+
+**Why.** More English practice is better even after the limit, and a big countdown or an Overdue badge while working is discouraging. Leaving through Pause makes stopping the clock explicit. Feedback next to the answer it's about is easier to follow than a separate feedback section.
+
+**Not yet.** The full student feedback screen from `docs/audio-feedback-spec.md` (player with comment markers, replay before a comment, heard checkmarks).

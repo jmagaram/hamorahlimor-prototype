@@ -284,3 +284,62 @@ export function publishFeedback(assignmentId: string) {
     f.datePublished = now();
   });
 }
+
+/* ---------- the student's work ---------- */
+
+/** Start or resume: the timer runs from now. */
+export function startAssignment(id: string) {
+  mutate(d => {
+    const a = d.assignments.find(x => x.id === id);
+    if (!a || a.state === 'active' || a.state === 'submitted') return;
+    const t = now();
+    a.state = 'active';
+    a.dateStarted ??= t;
+    a.resumedAt = t;
+  });
+}
+
+/** Stop the timer, adding this session's time. */
+function stopClock(a: Db['assignments'][number]) {
+  if (a.state === 'active' && a.resumedAt) a.secondsTaken += Math.max(0, (Date.now() - Date.parse(a.resumedAt)) / 1000);
+  delete a.resumedAt;
+}
+
+export function pauseAssignment(id: string) {
+  mutate(d => {
+    const a = d.assignments.find(x => x.id === id);
+    if (!a || a.state !== 'active') return;
+    stopClock(a);
+    a.state = 'paused';
+  });
+}
+
+/** Hand it in. Answers can't change after this. */
+export function submitAssignment(id: string) {
+  mutate(d => {
+    const a = d.assignments.find(x => x.id === id);
+    if (!a || a.state === 'submitted') return;
+    stopClock(a);
+    a.secondsTaken = Math.round(a.secondsTaken);
+    a.state = 'submitted';
+    a.dateSubmitted = now();
+  });
+}
+
+/** Save (or with no clip, remove) the student's answer to one question. */
+export function setAnswer(assignmentId: string, questionId: string, clip: AudioClip | undefined) {
+  mutate(d => {
+    d.answers = d.answers.filter(x => !(x.assignmentId === assignmentId && x.questionId === questionId));
+    if (clip) d.answers.push({ assignmentId, questionId, recording: clip.path, duration: clip.duration, dateRecorded: now() });
+  });
+}
+
+/** The student opened their published feedback: it's no longer new. */
+export function markFeedbackSeen(assignmentId: string) {
+  const f = db.feedback.find(x => x.assignmentId === assignmentId);
+  if (!f || f.status !== 'published' || f.dateSeen) return;
+  mutate(d => {
+    const g = d.feedback.find(x => x.assignmentId === assignmentId);
+    if (g) g.dateSeen = now();
+  });
+}

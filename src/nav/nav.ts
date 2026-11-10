@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { getSession } from '../model/session';
 import { discardIfEmptyDraft, discardIfEmptyQuestion } from '../model/store';
 
 export type Route =
@@ -15,6 +16,9 @@ export type Route =
   | { page: 'assignments' }
   | { page: 'assignment'; id: string }
   | { page: 'answerFeedback'; assignmentId: string; questionId: string }
+  // The student's side.
+  | { page: 'studentHome' }
+  | { page: 'work'; id: string }
   | { page: 'overallFeedback'; assignmentId: string };
 
 export interface StackEntry {
@@ -36,7 +40,10 @@ export function routeKey(r: Route): string {
 
 const entry = (route: Route): StackEntry => ({ route, key: routeKey(route), state: {} });
 
-let stack: StackEntry[] = [entry({ page: 'home' })];
+/** Home for whoever is signed in. */
+const homeRoute = (): Route => (getSession()?.role === 'student' ? { page: 'studentHome' } : { page: 'home' });
+
+let stack: StackEntry[] = [entry(homeRoute())];
 const listeners = new Set<() => void>();
 
 function set(next: StackEntry[]) {
@@ -86,7 +93,7 @@ export function back() {
 }
 /** Back to Home with nothing above it (after signing in or out). */
 export function resetToHome() {
-  set([entry({ page: 'home' })]);
+  set([entry(homeRoute())]);
 }
 export function crumb(i: number) {
   set(stack.slice(0, i + 1));
