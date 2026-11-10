@@ -22,6 +22,7 @@ function Page({ route }: { route: Route }) {
     case 'home': return <Home />;
     case 'studentHome': return <StudentHome />;
     case 'work': return <StudentAssignment id={route.id} />;
+    case 'myFeedback': return <AnswerFeedback readOnly assignmentId={route.assignmentId} questionId={route.questionId} />;
     case 'students': return <Students />;
     case 'student': return <Student id={route.id} />;
     case 'exercises': return <Exercises />;

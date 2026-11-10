@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { answerFor, feedbackFor } from '../model/derived';
 import { mmss } from '../model/format';
-import { newCommentId, updateFeedback, useDb } from '../model/store';
+import { markAnswerFeedbackSeen, newCommentId, updateFeedback, useDb } from '../model/store';
 import type { Comment, TimedComment } from '../model/types';
 import { AudioDrawer, Player } from '../ui/audio';
 import { BACK, FORWARD, PAUSE, PLAY, useTicker } from '../ui/media';
 import { ConfirmDrawer, DrawerShell, InputDrawer } from '../ui/Drawer';
 import { useDrawer } from '../ui/drawerContext';
-import { FeedbackRows } from '../ui/FeedbackRows';
+import { CommentView, FeedbackRows } from '../ui/FeedbackRows';
 import { Empty, Field } from '../ui/rows';
 import { NotFound } from './NotFound';
 
@@ -18,7 +18,11 @@ const STEP = 5;
  * Feedback on one answer: play the answer, pause where you want to comment, and record or type there.
  * Simplified from the full spec (no waveform, no follow-scroll, no auto-resume).
  */
-export function AnswerFeedback({ assignmentId, questionId }: { assignmentId: string; questionId: string }) {
+export function AnswerFeedback({ assignmentId, questionId, readOnly = false }: {
+  assignmentId: string; questionId: string;
+  /** The student's view: play the answer and the comments, change nothing. */
+  readOnly?: boolean;
+}) {
   const db = useDb();
   const drawer = useDrawer();
   const [pos, setPos] = useState(0);
@@ -32,6 +36,9 @@ export function AnswerFeedback({ assignmentId, questionId }: { assignmentId: str
   const q = e?.questions.find(x => x.id === questionId);
   const answer = answerFor(db, assignmentId, questionId);
   const d = answer?.duration ?? 0;
+
+  // The student opening their comments: no longer unread.
+  useEffect(() => { if (readOnly) markAnswerFeedbackSeen(assignmentId, questionId); }, [readOnly, assignmentId, questionId]);
 
   useTicker(playing, dt => {
     const p = pos + dt;
@@ -84,6 +91,10 @@ export function AnswerFeedback({ assignmentId, questionId }: { assignmentId: str
   const open = (c: TimedComment, n: number) => {
     pauseAt(c.atSeconds);
     const title = `Comment ${n} at ${mmss(c.atSeconds)}`;
+    if (readOnly) return drawer.open(<DrawerShell title={title}>
+      {c.text && <p>{c.text}</p>}
+      {c.audio && <Player clip={c.audio} autoPlay />}
+    </DrawerShell>);
     drawer.open(<CommentDrawer title={title} c={c}
       onText={() => type(c, title)}
       onRecord={() => record(c, title)}
@@ -95,7 +106,7 @@ export function AnswerFeedback({ assignmentId, questionId }: { assignmentId: str
     <>
       {q.promptText && <p>{q.promptText}</p>}
 
-      <h3>{first}'s answer</h3>
+      <h3>{readOnly ? 'Your answer' : `${first}'s answer`}</h3>
       <input className="scrub" type="range" min={0} max={d} step={0.1} value={pos} list="comment-marks"
         aria-label="Position" onChange={ev => seek(Number(ev.target.value))} />
       <datalist id="comment-marks">{comments.map(c => <option key={c.id} value={c.atSeconds} />)}</datalist>
@@ -105,10 +116,10 @@ export function AnswerFeedback({ assignmentId, questionId }: { assignmentId: str
         <button aria-label={playing ? 'Pause' : 'Play'} onClick={togglePlay}>{playing ? PAUSE : PLAY}</button>
         <button aria-label={`Skip ${STEP} seconds`} onClick={() => seek(pos + STEP)}>{STEP} {FORWARD}</button>
       </div>
-      <div className="audio-row">
+      {!readOnly && <div className="audio-row">
         <button onClick={() => newAt(record)}>Record at {mmss(anchor)}</button>
         <button onClick={() => newAt(type)}>Type at {mmss(anchor)}</button>
-      </div>
+      </div>}
 
       <h3>Comments</h3>
       {comments.length
@@ -117,10 +128,17 @@ export function AnswerFeedback({ assignmentId, questionId }: { assignmentId: str
             {c.text && <span className="clamp3">{c.text}</span>}
             {c.audio && <div><small>{PLAY} Audio {mmss(c.audio.duration)}</small></div>}
           </>} onClick={() => open(c, i + 1)} />))
-        : <Empty>Pause where you want to comment, then record or type.</Empty>}
+        : <Empty>{readOnly ? 'None.' : 'Pause where you want to comment, then record or type.'}</Empty>}
 
-      <h3>Overall comment</h3>
-      <FeedbackRows assignmentId={assignmentId} place={{ questionId }} c={af?.overall ?? {}} what={`${first}'s whole answer`} />
+      {readOnly
+        ? af && (af.overall.text || af.overall.audio) && <>
+          <h3>On your whole answer</h3>
+          <CommentView c={af.overall} title="On your whole answer" />
+        </>
+        : <>
+          <h3>Overall comment</h3>
+          <FeedbackRows assignmentId={assignmentId} place={{ questionId }} c={af?.overall ?? {}} what={`${first}'s whole answer`} />
+        </>}
 
     </>
   );

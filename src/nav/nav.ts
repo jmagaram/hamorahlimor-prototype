@@ -19,6 +19,7 @@ export type Route =
   // The student's side.
   | { page: 'studentHome' }
   | { page: 'work'; id: string }
+  | { page: 'myFeedback'; assignmentId: string; questionId: string }
   | { page: 'overallFeedback'; assignmentId: string };
 
 export interface StackEntry {
