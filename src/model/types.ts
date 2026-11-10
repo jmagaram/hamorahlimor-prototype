@@ -134,6 +134,8 @@ export interface AnswerFeedback {
   comments: TimedComment[];
   /** Sums up the whole answer; not tied to a moment. */
   overall: Comment;
+  /** When the student first opened these comments after publishing. Absent: unread. */
+  dateSeen?: Timestamp;
 }
 
 export type FeedbackStatus = 'draft' | 'published';

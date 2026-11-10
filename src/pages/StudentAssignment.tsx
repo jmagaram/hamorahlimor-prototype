@@ -2,15 +2,16 @@ import { useEffect, useReducer } from 'react';
 import { answerFor, clipRange, feedbackFor, KINDS, MATERIAL_HEADING, timeTaken } from '../model/derived';
 import { formatTimestamp, friendlyDay, minutes, mmss } from '../model/format';
 import { markFeedbackSeen, pauseAssignment, setAnswer, startAssignment, submitAssignment, useDb } from '../model/store';
-import { back } from '../nav/nav';
+import { back, go } from '../nav/nav';
 import type { Assignment, Comment, Exercise, Feedback } from '../model/types';
 import { AudioDrawer } from '../ui/audio';
 import { Badge } from '../ui/Badge';
 import { ConfirmDrawer, DrawerShell } from '../ui/Drawer';
 import { useDrawer } from '../ui/drawerContext';
+import { CommentView } from '../ui/FeedbackRows';
 import { Footer } from '../ui/Footer';
 import { PLAY, useTicker } from '../ui/media';
-import { Facts, Field } from '../ui/rows';
+import { Facts, Field, Row } from '../ui/rows';
 import { NotFound } from './NotFound';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -118,24 +119,13 @@ function Submitted({ a, e }: { a: Assignment; e: Exercise }) {
       <Questions a={a} e={e} feedback={published} />
       {published && hasContent(published.overall) && <>
         <h3>Overall feedback</h3>
-        <CommentRow label="From your teacher" c={published.overall} title="Overall feedback" />
+        <CommentView c={published.overall} title="Overall feedback" />
       </>}
     </>
   );
 }
 
 const hasContent = (c: Comment) => !!(c.text || c.audio);
-
-/** A teacher's comment: its text, and its audio to play. Opens it whole in a drawer. */
-function CommentRow({ label, c, title }: { label: string; c: Comment; title: string }) {
-  const drawer = useDrawer();
-  return <Field label={label} value={<>
-    {c.text && <span className="clamp3">{c.text}</span>}
-    {c.audio && <div><small>{PLAY} Audio {mmss(c.audio.duration)}</small></div>}
-  </>} onClick={() => drawer.open(c.audio
-    ? <AudioDrawer title={title} value={c.audio} readOnly autoPlay>{c.text && <p>{c.text}</p>}</AudioDrawer>
-    : <DrawerShell title={title}><p>{c.text}</p></DrawerShell>)} />;
-}
 
 /** The exercise's material: a video to open, audio to play, or the text itself. */
 function Material({ e }: { e: Exercise }) {
@@ -189,11 +179,9 @@ function Questions({ a, e, canRecord = false, feedback }: { a: Assignment; e: Ex
             onClick={clip || canRecord ? () => drawer.open(
               <AudioDrawer title={`Your answer to question ${n}`} value={clip} readOnly={locked} autoPlay={locked} target={t}
                 canDelete={e.allowRerecord} canReplace={e.allowRerecord} onChange={c => setAnswer(a.id, q.id, c)} />) : undefined} />
-          {/* The teacher's feedback on this answer, right under it: comments in time order, then one on the whole answer. */}
-          {af?.comments.map(c => (
-            <CommentRow key={c.id} label={`Comment at ${mmss(c.atSeconds)}`} c={c} title={`Comment at ${mmss(c.atSeconds)}`} />
-          ))}
-          {af && hasContent(af.overall) && <CommentRow label="Comment on your whole answer" c={af.overall} title={`Question ${n}: your teacher's comment`} />}
+          {/* The teacher's feedback on this answer, all in one place: the answer with its comments along it. */}
+          {af && <Row label={<>Teacher comments{!af.dateSeen && <> <Badge color="blue">Unread</Badge></>}</>}
+            onClick={() => go({ page: 'myFeedback', assignmentId: a.id, questionId: q.id })} />}
         </section>
       );
     })}

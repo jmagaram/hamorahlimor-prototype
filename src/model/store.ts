@@ -343,3 +343,13 @@ export function markFeedbackSeen(assignmentId: string) {
     if (g) g.dateSeen = now();
   });
 }
+
+/** The student opened one answer's comments: no longer unread. */
+export function markAnswerFeedbackSeen(assignmentId: string, questionId: string) {
+  const f = db.feedback.find(x => x.assignmentId === assignmentId);
+  if (!f || f.status !== 'published' || !f.answerFeedback[questionId] || f.answerFeedback[questionId].dateSeen) return;
+  mutate(d => {
+    const af = d.feedback.find(x => x.assignmentId === assignmentId)?.answerFeedback[questionId];
+    if (af) af.dateSeen = now();
+  });
+}

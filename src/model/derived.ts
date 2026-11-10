@@ -218,11 +218,11 @@ export const QUESTION_MODES: { value: QuestionMode; label: string; sub: string }
 export const questionModeLabel = (m: QuestionMode) => QUESTION_MODES.find(x => x.value === m)!.label;
 
 /** One line about an answer's feedback: "Comments at 0:06, 0:13 · Overall comment", or "None yet". */
-export function answerFeedbackSummary(af: AnswerFeedback | undefined): string {
+export function answerFeedbackSummary(af: AnswerFeedback | undefined, overallLabel = 'Overall comment'): string {
   if (!af) return 'None yet';
   const parts: string[] = [];
   if (af.comments.length) parts.push(`${af.comments.length === 1 ? 'Comment' : 'Comments'} at ${af.comments.map(c => mmss(c.atSeconds)).join(', ')}`);
-  if (af.overall.text || af.overall.audio) parts.push('Overall comment');
+  if (af.overall.text || af.overall.audio) parts.push(overallLabel);
   return parts.join(' · ') || 'None yet';
 }
 

@@ -134,7 +134,7 @@ Zero or one per assignment; it exists once the teacher starts reviewing.
 - `Comment` = `{ text?, audio? }` (`audio` is an `audio` recording), with at least one of the two to count as a comment. A comment left with neither is removed.
 - `overall: Comment`, on the whole assignment.
 - `answerFeedback: { [questionId]: AnswerFeedback }`, keyed by the same questionId as the Answer. Present only when it has something in it.
-  - `AnswerFeedback` = `{ comments: TimedComment[], overall: Comment }`: comments anchored to moments in the answer, plus one overall comment on the whole answer (not tied to a moment).
+  - `AnswerFeedback` = `{ comments: TimedComment[], overall: Comment, dateSeen? }`: comments anchored to moments in the answer, plus one overall comment on the whole answer (not tied to a moment). `dateSeen`: when the student first opened them; absent shows `Unread` to the student.
   - `TimedComment` = `Comment` + `{ id, atSeconds }`. `atSeconds` is where in the answer the teacher paused to comment. Kept sorted by `atSeconds`, and numbered in that order for display ("Comment 1…n"), so numbers aren't stored.
 - `status`: `draft` | `published`. A single status for the whole thing: the student sees **nothing**, overall or per answer, until it is published. Once published it stays published and cannot go back to draft: later edits reach the student right away and update `datePublished`. Each comment is saved as the teacher makes it; the first one creates the Feedback as a draft, and a draft whose comments are all removed is deleted (back to Needs review).
 - `dateStarted`, `datePublished`

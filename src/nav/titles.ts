@@ -32,6 +32,11 @@ export function routeTitle(db: Db, r: Route): string {
     }
     case 'overallFeedback': return 'Overall feedback';
     case 'studentHome': return 'Home';
+    case 'myFeedback': {
+      const a = db.assignments.find(x => x.id === r.assignmentId);
+      const i = db.exercises.find(x => x.id === a?.exerciseId)?.questions.findIndex(q => q.id === r.questionId) ?? -1;
+      return i < 0 ? NOT_FOUND : `Question ${i + 1} feedback`;
+    }
     case 'work': {
       const a = db.assignments.find(x => x.id === r.id);
       return db.exercises.find(e => e.id === a?.exerciseId)?.title ?? NOT_FOUND;
@@ -51,6 +56,7 @@ export function routeHeading(db: Db, r: Route): string {
   switch (r.page) {
     case 'home': return 'English practice';
     case 'studentHome': return 'Your assignments';
+    case 'myFeedback': return 'Feedback on your answer';
     case 'answerFeedback': {
       const a = db.assignments.find(x => x.id === r.assignmentId);
       const name = db.students.find(s => s.id === a?.studentId)?.name.split(' ')[0];
@@ -87,6 +93,7 @@ export function routeHeadingExtras(db: Db, r: Route): HeadingExtras {
     // No Overdue here: not motivating while doing the work. The page draws its own kicker with the clock.
     return { kicker: KINDS[e.kind].kicker };
   }
+  if (r.page === 'myFeedback') return { kicker: routeTitle(db, r).replace(' feedback', '') };
   if (r.page === 'answerFeedback') return { kicker: routeTitle(db, r).replace(' feedback', '') };
   if (r.page === 'assignment') {
     const a = db.assignments.find(x => x.id === r.id);
