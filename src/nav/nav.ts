@@ -14,7 +14,8 @@ export type Route =
   | { page: 'chooseExercise' }
   | { page: 'assignments' }
   | { page: 'assignment'; id: string }
-  | { page: 'answerFeedback'; assignmentId: string; questionId: string };
+  | { page: 'answerFeedback'; assignmentId: string; questionId: string }
+  | { page: 'overallFeedback'; assignmentId: string };
 
 export interface StackEntry {
   route: Route;

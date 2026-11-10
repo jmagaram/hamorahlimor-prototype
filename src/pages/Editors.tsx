@@ -43,7 +43,8 @@ function MaterialForm({ e }: { e: Exercise }) {
 /* ---------- Question ---------- */
 
 /** Target answer lengths, in minutes. */
-const TARGETS = [1, 2, 3, 4, 5];
+/** Seconds. The teacher's longest answers are about 2 minutes. */
+const TARGETS = [30, 60, 90, 120, 180, 240];
 
 /** A question's detail page. Each row is set on its own and saved right away. */
 export function QuestionEditor({ exerciseId, questionId }: { exerciseId: string; questionId: string }) {
@@ -71,7 +72,7 @@ export function QuestionEditor({ exerciseId, questionId }: { exerciseId: string;
       <Field label="Target length" value={q.targetSeconds ? minutes(q.targetSeconds) : 'No limit'} onClick={edit(() => drawer.open(
         <MenuDrawer<number | undefined> title="Target answer length"
           note="A goal, not a cutoff. Students see when they go over."
-          options={[...TARGETS.map(m => ({ label: `${m} min`, value: m * 60 })), { label: 'No limit', value: undefined }]}
+          options={[...TARGETS.map(t => ({ label: minutes(t), value: t })), { label: 'No limit', value: undefined }]}
           onPick={v => update(x => { x.targetSeconds = v; })} />))} />
       {draft && <Footer buttons={[{
         label: 'Delete question',

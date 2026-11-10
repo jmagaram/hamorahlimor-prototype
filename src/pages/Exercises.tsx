@@ -25,16 +25,22 @@ export function Exercises() {
       {groups.map(g => (
         <section key={g.status}>
           <h3>{g.label}</h3>
-          {g.items.length ? g.items.map(e => {
-            const assigned = db.assignments.filter(a => a.exerciseId === e.id).length;
-            const sub = `${KINDS[e.kind].label} · ${e.questions.length} questions` + (g.status === 'published' ? ` · ${assigned} assigned` : '');
-            return <Row key={e.id} label={e.title} sub={sub} onClick={() => go({ page: 'exercise', id: e.id })} />;
-          }) : <Empty>None</Empty>}
+          {g.items.length
+            ? g.items.map(e => <ExerciseRow key={e.id} e={e} onClick={() => go({ page: 'exercise', id: e.id })} />)
+            : <Empty>None</Empty>}
         </section>
       ))}
       <Footer buttons={[{ label: 'New exercise', onClick: newExercise }]} />
     </>
   );
+}
+
+/** An exercise in a list (Exercises, Choose exercise). */
+export function ExerciseRow({ e, onClick }: { e: ExerciseT; onClick: () => void }) {
+  const db = useDb();
+  const assigned = db.assignments.filter(a => a.exerciseId === e.id).length;
+  const sub = `${KINDS[e.kind].label} · ${e.questions.length} questions` + (e.status === 'published' ? ` · ${assigned} assigned` : '');
+  return <Row label={e.title} sub={sub} onClick={onClick} />;
 }
 
 /** Pick a kind, then open the new draft. */
@@ -121,7 +127,6 @@ export function Exercise({ id }: { id: string }) {
               confirmLabel="Delete" onConfirm={() => { back(); deleteExercise(id); }} />),
         },
         { label: 'Publish', onClick: publish },
-        { label: 'Done', onClick: back },
       ]} />
     </>
   );

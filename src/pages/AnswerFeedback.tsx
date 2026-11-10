@@ -3,13 +3,11 @@ import { answerFor, feedbackFor } from '../model/derived';
 import { mmss } from '../model/format';
 import { newCommentId, updateFeedback, useDb } from '../model/store';
 import type { Comment, TimedComment } from '../model/types';
-import { back } from '../nav/nav';
 import { AudioDrawer, Player } from '../ui/audio';
 import { BACK, FORWARD, PAUSE, PLAY, useTicker } from '../ui/media';
 import { ConfirmDrawer, DrawerShell, InputDrawer } from '../ui/Drawer';
 import { useDrawer } from '../ui/drawerContext';
 import { FeedbackRows } from '../ui/FeedbackRows';
-import { Footer } from '../ui/Footer';
 import { Empty, Field } from '../ui/rows';
 import { NotFound } from './NotFound';
 
@@ -124,7 +122,6 @@ export function AnswerFeedback({ assignmentId, questionId }: { assignmentId: str
       <h3>Overall comment</h3>
       <FeedbackRows assignmentId={assignmentId} place={{ questionId }} c={af?.overall ?? {}} what={`${first}'s whole answer`} />
 
-      <Footer buttons={[{ label: 'Done', onClick: back }]} />
     </>
   );
 }
@@ -145,4 +142,15 @@ function CommentDrawer({ title, c, onText, onRecord, onDelete }: {
       {c.audio && <Player clip={c.audio} autoPlay />}
     </DrawerShell>
   );
+}
+
+/** Feedback on the whole assignment: one comment, audio and/or text, not tied to a moment. */
+export function OverallFeedback({ assignmentId }: { assignmentId: string }) {
+  const db = useDb();
+  const a = db.assignments.find(x => x.id === assignmentId);
+  const s = db.students.find(x => x.id === a?.studentId);
+  if (!a || !s) return <NotFound />;
+  const first = s.name.split(' ')[0];
+  return <FeedbackRows assignmentId={assignmentId} place="overall"
+    c={feedbackFor(db, assignmentId)?.overall ?? {}} what={`${first}'s whole exercise`} />;
 }

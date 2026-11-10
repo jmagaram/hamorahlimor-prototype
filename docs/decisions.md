@@ -22,7 +22,7 @@ Why things are the way they are. Newest first. Each entry: the decision, why, an
 
 ## Empty drafts and questions delete themselves (2026-11-09)
 
-**Decision.** A draft is empty when its title is still the default, it has no material, and none of its questions has anything in it. A question is empty with no prompt text, no audio and no target. Leaving an empty one upward (Back, Done, crumbs, Home) deletes it silently, and its Delete button skips the confirmation. Detection is on the navigation stack: when an exercise or question entry drops off the stack, it's checked (deepest first). Going down (to a question, the text editor) keeps it.
+**Decision.** A draft is empty when its title is still the default, it has no material, and none of its questions has anything in it. A question is empty with no prompt text, no audio and no target. Leaving an empty one upward (Back, crumbs, Home) deletes it silently, and its Delete button skips the confirmation. Detection is on the navigation stack: when an exercise or question entry drops off the stack, it's checked (deepest first). Going down (to a question, the text editor) keeps it.
 
 **Why.** Tapping New exercise or Add question and changing your mind left "Untitled video" or "No prompt yet" rows behind for the teacher to clean up. Nothing is lost by deleting them, so there's nothing to confirm.
 
@@ -101,3 +101,19 @@ Why things are the way they are. Newest first. Each entry: the decision, why, an
 **Why.** Pages reset their component state when you navigate, so a flow like Assign → Choose exercise → back lost the ticked students. Native apps keep pages underneath alive; this does the same. The app is installed on the home screen and nobody shares links to pages, so detailed URLs (or `?state=` keys into storage) would be plumbing with no benefit.
 
 **Later (real app).** If the phone kills the app, it reopens at Home and an unfinished flow is lost; the stack could be saved to storage if that matters. Android's system back button triggers browser "back" in an installed web app and would close it, so mirror the stack into browser history with plain entries (`#1`, `#2`, …) that carry no details, and pop our stack on the browser's back event.
+
+## No Done button on pages (2026-11-10)
+
+**Decision.** Pages that save as you go have no `Done`; you leave with Back or the crumbs. Footers hold only actions on the page's thing. The draft exercise footer is `Delete · Publish`; the answer feedback page has no footer. Editor pages with unsaved input keep `Cancel` / `OK`, and drawers keep `Done` (a drawer has no Back).
+
+**Why.** Done had been added to the draft exercise page for reassurance and copied to the feedback page, while other auto-saving pages (Assignment, Student, Question) had none. Done did exactly what Back does, so two controls for one thing invited "does Back lose my draft?". The Draft badge already says it's kept.
+
+**Gave up.** Done was within thumb reach; Back is at the top. That's an app-wide concern to solve once (Android back button and swipe-back in the real app), not per page.
+
+## Assigning an exercise again (2026-11-10)
+
+**Decision.** A student can be assigned an exercise again once they've submitted the earlier one; while one is unfinished, Assign shows `Already assigned` and won't tick them. Repeats are told apart by the assigned day added to titles and rows (`· 10-Nov`), only when there's more than one.
+
+**Why.** Teachers repeat the same oral exercise (e.g. a project check-in every couple of weeks). A second open copy is almost always a mistake, but redoing a finished one is legitimate. Each assignment already has its own id, answers and feedback, so no schema change. "Submitted" (not "feedback published") is the cutoff because it's when the student's part is done.
+
+**Gave up.** We considered numbering repeats ("(2)"); the date is more meaningful to a teacher. Two repeats assigned on the same day would look alike (unlikely). Not yet: a link from an assignment to the student's earlier attempts, to compare answers over time.

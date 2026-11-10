@@ -111,6 +111,7 @@ One exercise given to one student. It also holds the student's progress (there i
   - `resumedAt`: when the current session began. Empty while paused or submitted.
   - Time taken right now = `secondsTaken` + (now − `resumedAt`) while `active`.
 - `dateSubmitted`
+- A student can get the same exercise again (a repeat, e.g. an oral project every couple of weeks), each time as a new Assignment with its own answers and feedback. Rule: **at most one open (not submitted) assignment per student + exercise**. The UI enforces it (Assign blocks the student, `assign()` skips them); the data doesn't need to.
 
 ### Answer
 - Key: `assignmentId` + `questionId`, so there is at most one answer per question per assignment. Re-recording overwrites it.

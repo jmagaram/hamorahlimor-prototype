@@ -4,7 +4,7 @@ import { PageEntryContext } from './nav/pageState';
 import { routeHeading, routeHeadingExtras } from './nav/titles';
 import { Badge } from './ui/Badge';
 import { Assign, ChooseExercise } from './pages/Assign';
-import { AnswerFeedback } from './pages/AnswerFeedback';
+import { AnswerFeedback, OverallFeedback } from './pages/AnswerFeedback';
 import { Assignment, Assignments } from './pages/Assignments';
 import { Material, QuestionEditor } from './pages/Editors';
 import { Exercise, Exercises } from './pages/Exercises';
@@ -26,6 +26,7 @@ function Page({ route }: { route: Route }) {
     case 'chooseExercise': return <ChooseExercise />;
     case 'assignments': return <Assignments />;
     case 'assignment': return <Assignment id={route.id} />;
+    case 'overallFeedback': return <OverallFeedback assignmentId={route.assignmentId} />;
     case 'answerFeedback': return <AnswerFeedback assignmentId={route.assignmentId} questionId={route.questionId} />;
   }
 }
