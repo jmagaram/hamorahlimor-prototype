@@ -2,6 +2,32 @@
 
 Why things are the way they are. Newest first. Each entry: the decision, why, and what we gave up.
 
+## Question text is required; the exercise decides how students get questions (2026-11-09, revised 2026-11-10)
+
+**Decision.** Every question needs its text to publish. An exercise setting, `questionMode`, says how students get each question: **Read it** (text only, no question audio), **Hear it** (audio only; the text is for the teacher), or **Read and hear it** (both). When students hear questions, every question needs audio. Grading always shows the text.
+
+**Revised 2026-11-10.** The first version had optional audio per question plus a yes/no "students see text". That allowed some questions with audio and some without in one exercise, and audio recorded on text-only exercises. Making audio all-or-nothing per exercise removes those cases.
+
+**Why.** Grading against an audio-only question meant replaying it to remember what was asked. Treating the text as the question itself (not a separate "transcript") keeps one idea to explain, and later text-to-speech can generate the audio from it. Hiding text is a choice about the whole exercise, so it's one setting rather than a checkbox per question.
+
+**Gave up / deferred.** Per-question hiding. Exercise "instructions" (guidance like "speak clearly") were discussed and deferred until the student side exists; guidance shouldn't go in question text.
+
+## Review on Assignment detail, saved as you go (2026-11-09)
+
+**Decision.** The separate Review page is gone. Assignment detail shows the exercise's material, then each question with its text and audio, the student's answer, and (once submitted) rows for your audio and written feedback; then overall feedback. Tapping a recording opens the player already playing. Every feedback change saves right away as a draft; `Publish` in the footer shows it to the student. After publishing, edits reach the student immediately (there's no second publish).
+
+**Why.** Answers were on one page and feedback on another, so the teacher listened in one place and commented in another, without the question or material in view. Putting the question, the answer and your feedback together matches how a teacher grades one answer at a time, and rows with drawers replace a page of text boxes.
+
+**Gave up.** No Cancel for a review session: changes save as you make them. Editing published feedback isn't staged; a typo fix goes straight to the student, which is usually what a teacher expects.
+
+## Empty drafts and questions delete themselves (2026-11-09)
+
+**Decision.** A draft is empty when its title is still the default, it has no material, and none of its questions has anything in it. A question is empty with no prompt text, no audio and no target. Leaving an empty one upward (Back, Done, crumbs, Home) deletes it silently, and its Delete button skips the confirmation. Detection is on the navigation stack: when an exercise or question entry drops off the stack, it's checked (deepest first). Going down (to a question, the text editor) keeps it.
+
+**Why.** Tapping New exercise or Add question and changing your mind left "Untitled video" or "No prompt yet" rows behind for the teacher to clean up. Nothing is lost by deleting them, so there's nothing to confirm.
+
+**Gave up.** Time limit and re-recording don't count as content, so a draft with only those set is still deleted. They're two taps to redo, and counting them would let a stray tap keep junk drafts.
+
 ## Exercise kinds stay fixed; material is one section named for the kind (2026-11-09)
 
 **Decision.** An exercise keeps one kind (video, listen, read, speaking), and its page has sections: General, then the material under a heading for the kind ("Video to watch", "Audio to listen to", "Text to read"; none for speaking), then Questions. The listen exercise's optional transcript (`sourceText`) was removed.
@@ -49,3 +75,13 @@ Why things are the way they are. Newest first. Each entry: the decision, why, an
 **Decision.** Deleted `docs/screens.md`. The code in `src/pages/` is the spec for each page.
 
 **Why.** Every UI tweak had to be made twice, in code and in the per-page doc, which slowed down prototyping. Only prototype-wide rules (CLAUDE.md), the data model, and decision reasoning (this file) are worth keeping in docs.
+
+## Timed comments on each answer (2026-11-10)
+
+**Decision.** Feedback on an answer is a list of comments, each anchored to a moment in the student's answer (`atSeconds`) and holding audio, text, or both, plus one overall comment on the whole answer. It's edited on its own page. The assignment keeps its own overall comment. The full teacher and student design is in `docs/audio-feedback-spec.md`; the prototype builds a simplified version.
+
+**Why.** A single block of feedback per answer made the teacher remember where things happened, and made the student hunt for them. Pausing and commenting right there means there's no mode switch, and the student can hear what they said just before each comment. Audio, text, or both: say a correction, and type the word when spelling matters.
+
+**Gave up.** Simpler alternatives we considered: one text box and one recording per answer that the teacher adds to while listening, with an optional "[0:32]" inserted into the text. Timed comments cost a little more model and UI, but they're the shape the student screen needs.
+
+**The real app follows the spec, not the prototype.** The prototype page only shows the flow. Missing from it: one-tap record/stop on the page (no drawer), "Resume after each comment", a list that follows playback, replaying the same window again, the "No overall comment" nudge on Done, the waveform with comment dots, play buttons with progress rings in the rows, and the student screen.

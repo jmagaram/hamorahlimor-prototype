@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
-import { normalizeClass } from './derived';
+import { defaultTitle, isEmptyDraft, isEmptyQuestion, normalizeClass } from './derived';
 import { now, today } from './format';
 import { seed } from './seed';
-import type { AudioClip, Comment, Db, Exercise, ExerciseKind, FeedbackStatus, Question } from './types';
+import type { AudioClip, Comment, Db, Exercise, ExerciseKind, Question } from './types';
 
 // In-memory store. Every change goes through mutate(), which works on a copy,
 // so React sees a new Db object each time.
@@ -95,10 +95,9 @@ const EMPTY_MATERIAL: { [K in ExerciseKind]: () => Extract<Exercise, { kind: K }
 
 export function createExercise(kind: ExerciseKind): string {
   const id = newId('e');
-  const label = { video: 'video', read: 'read and respond', listen: 'listen and respond', speaking: 'speaking questions' }[kind];
   mutate(d => {
     d.exercises.push({
-      id, kind, title: `Untitled ${label}`, status: 'draft', allowRerecord: true,
+      id, kind, title: defaultTitle(kind), status: 'draft', allowRerecord: true, questionMode: 'read',
       dateCreated: today(), questions: [], material: EMPTY_MATERIAL[kind](),
     } as Exercise);
   });
@@ -120,6 +119,19 @@ export function publishExercise(id: string) {
 /** Only drafts can be deleted; drafts are never assigned. */
 export function deleteExercise(id: string) {
   mutate(d => { d.exercises = d.exercises.filter(e => !(e.id === id && e.status === 'draft')); });
+}
+
+/** Delete the draft if it's empty (see isEmptyDraft). Called when navigation leaves its page. */
+export function discardIfEmptyDraft(id: string) {
+  const e = db.exercises.find(x => x.id === id);
+  if (e && isEmptyDraft(e)) deleteExercise(id);
+}
+
+/** Delete the question if it's empty and its exercise is a draft. Called when navigation leaves its page. */
+export function discardIfEmptyQuestion(exerciseId: string, questionId: string) {
+  const e = db.exercises.find(x => x.id === exerciseId);
+  const q = e?.questions.find(x => x.id === questionId);
+  if (e?.status === 'draft' && q && isEmptyQuestion(q)) deleteQuestion(exerciseId, questionId);
 }
 
 /** Creates a draft "Copy of …" and returns its id. */
@@ -207,25 +219,65 @@ function cleanComment(c: Comment): Comment {
   return out;
 }
 
-/** Published feedback stays published: saving it as a draft is refused. */
-export function saveFeedback(assignmentId: string, overall: Comment, answerComments: Record<string, Comment>, status: FeedbackStatus) {
+const hasContent = (c: Comment) => !!(c.text || c.audio);
+
+/** Copy a comment's content, let fn change it, and tidy it. */
+function applyTo(c: Comment, fn: (c: Comment) => void): Comment {
+  const x: Comment = { text: c.text, audio: c.audio };
+  fn(x);
+  return cleanComment(x);
+}
+
+/**
+ * Which comment to change: the assignment's overall one, an answer's overall one ({ questionId }),
+ * or a timed comment on an answer ({ questionId, comment }); a new id adds that comment.
+ */
+export type CommentPlace = 'overall' | { questionId: string; comment?: { id: string; atSeconds: number } };
+
+/** An id for a new timed comment. */
+export const newCommentId = () => newId('c');
+
+/**
+ * Change one comment of an assignment's feedback. A comment left with neither text nor audio is removed.
+ * Saves right away. The first change starts the feedback as a draft; published feedback stays
+ * published, so edits reach the student immediately (and update datePublished).
+ * A draft left with no comments at all is removed, so the assignment is back to "Needs review".
+ */
+export function updateFeedback(assignmentId: string, place: CommentPlace, fn: (c: Comment) => void) {
   mutate(d => {
-    const old = d.feedback.find(f => f.assignmentId === assignmentId);
-    if (old?.status === 'published' && status === 'draft') return;
-    const comments: Record<string, Comment> = {};
-    for (const [qid, c] of Object.entries(answerComments)) {
-      const cc = cleanComment(c);
-      if (cc.text || cc.audio) comments[qid] = cc;
-    }
     const t = now();
-    const f = {
-      assignmentId,
-      overall: cleanComment(overall),
-      answerComments: comments,
-      status,
-      dateStarted: old?.dateStarted ?? t,
-      ...(status === 'published' ? { datePublished: t } : {}),
-    };
-    d.feedback = [...d.feedback.filter(x => x.assignmentId !== assignmentId), f];
+    let f = d.feedback.find(x => x.assignmentId === assignmentId);
+    if (!f) {
+      f = { assignmentId, overall: {}, answerFeedback: {}, status: 'draft', dateStarted: t };
+      d.feedback.push(f);
+    }
+    if (place === 'overall') f.overall = applyTo(f.overall, fn);
+    else {
+      const q = place.questionId;
+      const af = f.answerFeedback[q] ?? { comments: [], overall: {} };
+      if (!place.comment) af.overall = applyTo(af.overall, fn);
+      else {
+        const { id, atSeconds } = place.comment;
+        const old = af.comments.find(c => c.id === id) ?? { id, atSeconds };
+        const c = { id, atSeconds: old.atSeconds, ...applyTo(old, fn) };
+        af.comments = af.comments.filter(x => x.id !== id);
+        if (hasContent(c)) af.comments = [...af.comments, c].sort((x, y) => x.atSeconds - y.atSeconds);
+      }
+      if (af.comments.length || hasContent(af.overall)) f.answerFeedback[q] = af;
+      else delete f.answerFeedback[q];
+    }
+    if (f.status === 'published') f.datePublished = t;
+    const empty = !hasContent(f.overall) && !Object.keys(f.answerFeedback).length;
+    if (empty && f.status === 'draft') d.feedback = d.feedback.filter(x => x.assignmentId !== assignmentId);
+  });
+}
+
+/** Make the feedback visible to the student. */
+export function publishFeedback(assignmentId: string) {
+  mutate(d => {
+    const f = d.feedback.find(x => x.assignmentId === assignmentId);
+    if (!f) return;
+    f.status = 'published';
+    f.datePublished = now();
   });
 }

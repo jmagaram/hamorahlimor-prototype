@@ -8,10 +8,9 @@ export function Home() {
   const needsReview = db.assignments.filter(a => displayStatus(db, a) === 'Needs review').length;
   return (
     <>
-      <Row label="Needs review" sub={`${needsReview} submitted, waiting for feedback`} onClick={() => go({ page: 'assignments' })} />
       <Row label="Exercises" onClick={() => go({ page: 'exercises' })} />
       <Row label="Students" onClick={() => go({ page: 'students' })} />
-      <Row label="Assignments" onClick={() => go({ page: 'assignments' })} />
+      <Row label="Assignments" sub={needsReview ? `${needsReview} need review` : undefined} onClick={() => go({ page: 'assignments' })} />
     </>
   );
 }

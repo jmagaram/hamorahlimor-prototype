@@ -1,23 +1,13 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { mmss } from '../model/format';
 import { fakeAudio } from '../model/store';
 import type { AudioClip } from '../model/types';
 import { DrawerShell } from './Drawer';
 import { useDrawer } from './drawerContext';
+import { BACK, FORWARD, PAUSE, PLAY, useTicker } from './media';
 
 /** "1:16.3": minutes, seconds, tenths. */
 const elapsed = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}.${Math.floor((s * 10) % 10)}`;
-
-/** Calls `tick(dt)` every 100 ms while `on`, with dt in seconds. */
-function useTicker(on: boolean, tick: (dt: number) => void) {
-  const ref = useRef(tick);
-  useEffect(() => { ref.current = tick; });
-  useEffect(() => {
-    if (!on) return;
-    const t = setInterval(() => ref.current(0.1), 100);
-    return () => clearInterval(t);
-  }, [on]);
-}
 
 type Mode = 'player' | 'ready' | 'recording' | 'confirmReplace' | 'confirmDelete';
 
@@ -26,7 +16,7 @@ type Mode = 'player' | 'ready' | 'recording' | 'confirmReplace' | 'confirmDelete
  * Each change calls `onChange` right away (on Stop, on Delete), so the closing button is Done.
  * The previous recording is kept until a new one is stopped, so cancelling a new take loses nothing.
  */
-export function AudioDrawer({ title, value, onChange, canDelete = true, readOnly = false, children }: {
+export function AudioDrawer({ title, value, onChange, canDelete = true, readOnly = false, autoPlay = false, children }: {
   title: string;
   /** Shown above the player, e.g. the question's text. */
   children?: ReactNode;
@@ -35,6 +25,8 @@ export function AudioDrawer({ title, value, onChange, canDelete = true, readOnly
   /** False where a recording is required (e.g. Listen material). */
   canDelete?: boolean;
   readOnly?: boolean;
+  /** Start playing when the drawer opens (it was opened by a tap, so the browser allows it). */
+  autoPlay?: boolean;
 }) {
   const { close, setLocked } = useDrawer();
   const [clip, setClip] = useState(value);
@@ -87,21 +79,15 @@ export function AudioDrawer({ title, value, onChange, canDelete = true, readOnly
       <button onClick={close}>Done</button>
     </>}>
       {children}
-      {clip ? <Player key={clip.path} clip={clip} /> : <p>No recording.</p>}
+      {clip ? <Player key={clip.path} clip={clip} autoPlay={autoPlay} /> : <p>No recording.</p>}
     </DrawerShell>
   );
 }
 
-// Media symbols; U+FE0E asks for the plain text glyph, not the color emoji (iOS).
-const PLAY = '\u25B6\uFE0E';
-const PAUSE = '\u23F8\uFE0E';
-const BACK = '\u23EA\uFE0E';
-const FORWARD = '\u23E9\uFE0E';
-
 /** Fake playback: a slider, "0:02 / 2:42", and back 15 s / play-pause / skip 15 s. */
-function Player({ clip }: { clip: AudioClip }) {
+export function Player({ clip, autoPlay = false }: { clip: AudioClip; autoPlay?: boolean }) {
   const [pos, setPos] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(autoPlay);
   const d = clip.duration;
   // At the end, stop and go back to the start.
   useTicker(playing, dt => {
@@ -123,8 +109,3 @@ function Player({ clip }: { clip: AudioClip }) {
   );
 }
 
-/** A Play button that opens the player for a recording someone else made (read-only). */
-export function PlayButton({ title, clip }: { title: string; clip: AudioClip }) {
-  const drawer = useDrawer();
-  return <button type="button" onClick={() => drawer.open(<AudioDrawer title={title} value={clip} readOnly />)}>Play</button>;
-}

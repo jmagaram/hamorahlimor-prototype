@@ -22,6 +22,9 @@ export interface Student {
   dateCreated: DateString;
 }
 
+/** read: text only. hear: audio only (text is for the teacher). readAndHear: both. */
+export type QuestionMode = 'read' | 'hear' | 'readAndHear';
+
 export type ExerciseKind = 'video' | 'read' | 'listen' | 'speaking';
 export type ExerciseStatus = 'draft' | 'published';
 
@@ -52,8 +55,9 @@ export interface MaterialByKind {
 
 export interface Question {
   id: string;
-  /** At least one of promptText and promptAudio to publish; a draft question can have neither yet. */
+  /** The question as text. Required to publish (the teacher grades against it); students see it unless questionMode is 'hear'. */
   promptText?: string;
+  /** The question spoken. Required when questionMode includes hearing; not used in 'read' mode. */
   promptAudio?: AudioClip;
   /** A goal for the answer's length, not a cutoff. */
   targetSeconds?: number;
@@ -66,6 +70,8 @@ interface ExerciseFields {
   /** Minutes, for the whole exercise. */
   timeLimit?: number;
   allowRerecord: boolean;
+  /** How students get each question: read its text, hear its audio, or both. The teacher always sees the text. */
+  questionMode: QuestionMode;
   dateCreated: DateString;
   /** In order. One or more to publish. */
   questions: Question[];
@@ -109,14 +115,30 @@ export interface Comment {
   audio?: AudioClip;
 }
 
+/** A comment anchored to a moment in the student's answer. */
+export interface TimedComment extends Comment {
+  id: string;
+  /** Where in the answer the teacher paused to comment, in seconds. */
+  atSeconds: number;
+}
+
+/** The teacher's feedback on one answer. */
+export interface AnswerFeedback {
+  /** Sorted by atSeconds. */
+  comments: TimedComment[];
+  /** Sums up the whole answer; not tied to a moment. */
+  overall: Comment;
+}
+
 export type FeedbackStatus = 'draft' | 'published';
 
 /** Zero or one per assignment. */
 export interface Feedback {
   assignmentId: string;
+  /** On the whole assignment. */
   overall: Comment;
   /** Keyed by questionId. */
-  answerComments: Record<string, Comment>;
+  answerFeedback: Record<string, AnswerFeedback>;
   status: FeedbackStatus;
   dateStarted: Timestamp;
   datePublished?: Timestamp;

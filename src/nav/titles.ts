@@ -30,7 +30,11 @@ export function routeTitle(db: Db, r: Route): string {
       const e = db.exercises.find(x => x.id === a.exerciseId);
       return `${s?.name} · ${e?.title}`;
     }
-    case 'review': return 'Review';
+    case 'answerFeedback': {
+      const a = db.assignments.find(x => x.id === r.assignmentId);
+      const i = db.exercises.find(x => x.id === a?.exerciseId)?.questions.findIndex(q => q.id === r.questionId) ?? -1;
+      return i < 0 ? NOT_FOUND : `Question ${i + 1} feedback`;
+    }
   }
 }
 
@@ -42,10 +46,10 @@ export function routeHeading(db: Db, r: Route): string {
     case 'home': return 'English practice';
     case 'assignToStudents': return `Assign ${db.exercises.find(e => e.id === r.exerciseId)?.title}`;
     case 'assignToStudent': return `Assign to ${db.students.find(s => s.id === r.studentId)?.name}`;
-    case 'review': {
-      const a = db.assignments.find(x => x.id === r.id);
-      if (!a) return NOT_FOUND;
-      return `Feedback for ${db.students.find(s => s.id === a?.studentId)?.name}`;
+    case 'answerFeedback': {
+      const a = db.assignments.find(x => x.id === r.assignmentId);
+      const name = db.students.find(s => s.id === a?.studentId)?.name.split(' ')[0];
+      return `Feedback on ${name}'s answer`;
     }
     default: return title;
   }
@@ -66,7 +70,8 @@ export function routeHeadingExtras(db: Db, r: Route): HeadingExtras {
       badges: [{ label: e.status === 'draft' ? 'Draft' : 'Published', color: EXERCISE_STATUS_COLOR[e.status] }],
     };
   }
-  if (r.page === 'assignment' || r.page === 'review') {
+  if (r.page === 'answerFeedback') return { kicker: routeTitle(db, r).replace(' feedback', '') };
+  if (r.page === 'assignment') {
     const a = db.assignments.find(x => x.id === r.id);
     if (!a) return {};
     const status = displayStatus(db, a);

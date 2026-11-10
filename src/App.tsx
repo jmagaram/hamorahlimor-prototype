@@ -3,11 +3,11 @@ import { useStack, type Route } from './nav/nav';
 import { routeHeading, routeHeadingExtras } from './nav/titles';
 import { Badge } from './ui/Badge';
 import { AssignToStudent, AssignToStudents } from './pages/Assign';
+import { AnswerFeedback } from './pages/AnswerFeedback';
 import { Assignment, Assignments } from './pages/Assignments';
 import { Material, QuestionEditor } from './pages/Editors';
 import { Exercise, Exercises } from './pages/Exercises';
 import { Home } from './pages/Home';
-import { Review } from './pages/Review';
 import { Student, Students } from './pages/Students';
 import { DrawerProvider } from './ui/Drawer';
 import { Header } from './ui/Header';
@@ -25,7 +25,7 @@ function Page({ route }: { route: Route }) {
     case 'assignToStudent': return <AssignToStudent studentId={route.studentId} />;
     case 'assignments': return <Assignments />;
     case 'assignment': return <Assignment id={route.id} />;
-    case 'review': return <Review id={route.id} />;
+    case 'answerFeedback': return <AnswerFeedback assignmentId={route.assignmentId} questionId={route.questionId} />;
   }
 }
 
